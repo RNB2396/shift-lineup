@@ -1,10 +1,50 @@
 import axios from 'axios';
+import { supabase } from './lib/supabase';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 const api = axios.create({
   baseURL: `${API_BASE}/api`
 });
+
+// Store ID storage (set by AuthContext when store is selected)
+let currentStoreId = null;
+
+export const setCurrentStoreId = (storeId) => {
+  currentStoreId = storeId;
+};
+
+// Add auth interceptor to include token and store ID in requests
+api.interceptors.request.use(async (config) => {
+  // Get current session token
+  if (supabase) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) {
+      config.headers.Authorization = `Bearer ${session.access_token}`;
+    }
+  }
+
+  // Add store ID header
+  if (currentStoreId) {
+    config.headers['X-Store-Id'] = currentStoreId;
+  }
+
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
+
+// Handle 401 responses
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Could trigger logout here if needed
+      console.error('Unauthorized request:', error.response?.data?.error);
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Employee API
 export const employeeApi = {
@@ -40,6 +80,11 @@ export const lineupApi = {
     link.remove();
     window.URL.revokeObjectURL(url);
   }
+};
+
+// Auth API
+export const authApi = {
+  getMe: () => api.get('/auth/me').then(res => res.data)
 };
 
 export default api;

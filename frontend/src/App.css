@@ -35,10 +35,69 @@ body {
   z-index: 100;
 }
 
+.header-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .app-header h1 {
   margin: 0;
   font-size: 1.25rem;
   text-align: center;
+}
+
+.store-badge {
+  background: rgba(255,255,255,0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.logout-btn {
+  background: transparent !important;
+  border: 1px solid rgba(255,255,255,0.5) !important;
+  opacity: 0.8;
+}
+
+.logout-btn:hover {
+  opacity: 1;
+  background: rgba(255,255,255,0.1) !important;
+}
+
+/* No Store Error */
+.no-store-error {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e4002b 0%, #c4001e 100%);
+  color: white;
+  text-align: center;
+  padding: 2rem;
+}
+
+.no-store-error h1 {
+  margin: 0 0 1rem 0;
+}
+
+.no-store-error p {
+  margin: 0 0 2rem 0;
+  opacity: 0.9;
+}
+
+.no-store-error button {
+  background: white;
+  color: #e4002b;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .tabs {
@@ -815,7 +874,13 @@ body {
   .app-header {
     flex-direction: row;
     justify-content: space-between;
+    align-items: center;
     padding: 1rem 2rem;
+  }
+
+  .header-left {
+    flex-direction: row;
+    align-items: center;
   }
 
   .app-header h1 {

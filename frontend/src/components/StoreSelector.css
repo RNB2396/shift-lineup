@@ -1,0 +1,118 @@
+.store-selector-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e4002b 0%, #c4001e 100%);
+  padding: 20px;
+}
+
+.store-selector-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  padding: 40px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.store-selector-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.store-selector-header h1 {
+  color: #333;
+  margin: 0 0 8px 0;
+  font-size: 24px;
+}
+
+.store-selector-header p {
+  color: #666;
+  margin: 0;
+}
+
+.store-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.store-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: #f9f9f9;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.store-option:hover {
+  background: #fff;
+  border-color: #e4002b;
+  box-shadow: 0 2px 8px rgba(228, 0, 43, 0.1);
+}
+
+.store-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.store-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 16px;
+}
+
+.store-number {
+  color: #888;
+  font-size: 13px;
+}
+
+.store-role {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.role-owner {
+  background: #e4002b;
+  color: white;
+}
+
+.role-manager {
+  background: #2e7d32;
+  color: white;
+}
+
+.role-viewer {
+  background: #666;
+  color: white;
+}
+
+.store-selector-footer {
+  text-align: center;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #eee;
+}
+
+.logout-link {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.logout-link:hover {
+  color: #e4002b;
+}

@@ -9,6 +9,7 @@ const { supabase } = require('./config/supabase');
 const { allPositions } = require('./config/positionLayouts');
 const { generateLineups } = require('./services/lineupGenerator');
 const { exportToBuffer } = require('./services/excelExporter');
+const { authMiddleware, requireStore, requireManager } = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -49,35 +50,52 @@ function toApiFormat(row) {
     isMinor: row.is_minor,
     positions: row.positions || [],
     bestPositions: row.best_positions || [],
+    storeId: row.store_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
 }
 
 // Convert API format to Supabase row
-function toDbFormat(data) {
+function toDbFormat(data, storeId) {
   return {
     name: data.name,
     is_minor: data.isMinor || false,
     positions: data.positions || [],
-    best_positions: data.bestPositions || []
+    best_positions: data.bestPositions || [],
+    store_id: storeId
   };
 }
 
+// ========== Auth Routes ==========
+
+// Get current user info
+app.get('/api/auth/me', authMiddleware, (req, res) => {
+  res.json({
+    user: {
+      id: req.user.id,
+      email: req.user.email
+    },
+    stores: req.user.stores
+  });
+});
+
 // ========== Employee Routes ==========
 
-// Get all employees
-app.get('/api/employees', async (req, res) => {
+// Get all employees (for a specific store)
+app.get('/api/employees', authMiddleware, requireStore, async (req, res) => {
   try {
-    if (supabase) {
-      const { data, error } = await supabase
+    if (req.supabase) {
+      const { data, error } = await req.supabase
         .from('employees')
         .select('*')
+        .eq('store_id', req.store.id)
         .order('name');
 
       if (error) throw error;
       res.json(data.map(toApiFormat));
     } else {
+      // Fallback for local dev
       const data = readEmployeesFromFile();
       res.json(data.employees);
     }
@@ -88,13 +106,14 @@ app.get('/api/employees', async (req, res) => {
 });
 
 // Get single employee
-app.get('/api/employees/:id', async (req, res) => {
+app.get('/api/employees/:id', authMiddleware, requireStore, async (req, res) => {
   try {
-    if (supabase) {
-      const { data, error } = await supabase
+    if (req.supabase) {
+      const { data, error } = await req.supabase
         .from('employees')
         .select('*')
         .eq('id', req.params.id)
+        .eq('store_id', req.store.id)
         .single();
 
       if (error) {
@@ -119,12 +138,12 @@ app.get('/api/employees/:id', async (req, res) => {
 });
 
 // Create employee
-app.post('/api/employees', async (req, res) => {
+app.post('/api/employees', authMiddleware, requireStore, requireManager, async (req, res) => {
   try {
-    if (supabase) {
-      const { data, error } = await supabase
+    if (req.supabase) {
+      const { data, error } = await req.supabase
         .from('employees')
-        .insert([toDbFormat(req.body)])
+        .insert([toDbFormat(req.body, req.store.id)])
         .select()
         .single();
 
@@ -152,13 +171,14 @@ app.post('/api/employees', async (req, res) => {
 });
 
 // Update employee
-app.put('/api/employees/:id', async (req, res) => {
+app.put('/api/employees/:id', authMiddleware, requireStore, requireManager, async (req, res) => {
   try {
-    if (supabase) {
-      const { data, error } = await supabase
+    if (req.supabase) {
+      const { data, error } = await req.supabase
         .from('employees')
-        .update(toDbFormat(req.body))
+        .update(toDbFormat(req.body, req.store.id))
         .eq('id', req.params.id)
+        .eq('store_id', req.store.id)
         .select()
         .single();
 
@@ -196,13 +216,14 @@ app.put('/api/employees/:id', async (req, res) => {
 });
 
 // Delete employee
-app.delete('/api/employees/:id', async (req, res) => {
+app.delete('/api/employees/:id', authMiddleware, requireStore, requireManager, async (req, res) => {
   try {
-    if (supabase) {
-      const { error } = await supabase
+    if (req.supabase) {
+      const { error } = await req.supabase
         .from('employees')
         .delete()
-        .eq('id', req.params.id);
+        .eq('id', req.params.id)
+        .eq('store_id', req.store.id);
 
       if (error) throw error;
       res.status(204).send();
@@ -226,7 +247,7 @@ app.delete('/api/employees/:id', async (req, res) => {
 
 // ========== Position Routes ==========
 
-// Get all available positions
+// Get all available positions (public - no auth needed)
 app.get('/api/positions', (req, res) => {
   res.json(allPositions);
 });
@@ -234,7 +255,7 @@ app.get('/api/positions', (req, res) => {
 // ========== Lineup Routes ==========
 
 // Generate lineup
-app.post('/api/lineup/generate', async (req, res) => {
+app.post('/api/lineup/generate', authMiddleware, requireStore, async (req, res) => {
   try {
     const { shiftAssignments } = req.body;
 
@@ -243,10 +264,11 @@ app.post('/api/lineup/generate', async (req, res) => {
     }
 
     let employees = [];
-    if (supabase) {
-      const { data, error } = await supabase
+    if (req.supabase) {
+      const { data, error } = await req.supabase
         .from('employees')
-        .select('*');
+        .select('*')
+        .eq('store_id', req.store.id);
 
       if (error) throw error;
       employees = data.map(toApiFormat);
@@ -264,7 +286,7 @@ app.post('/api/lineup/generate', async (req, res) => {
 });
 
 // Export lineup to Excel
-app.post('/api/lineup/export', async (req, res) => {
+app.post('/api/lineup/export', authMiddleware, requireStore, async (req, res) => {
   try {
     const { lineups } = req.body;
 
@@ -295,6 +317,7 @@ app.listen(PORT, () => {
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`Database: ${supabase ? 'Supabase' : 'Local JSON file'}`);
   console.log('Available endpoints:');
+  console.log('  GET    /api/auth/me        - Get current user info');
   console.log('  GET    /api/employees      - List all employees');
   console.log('  POST   /api/employees      - Create employee');
   console.log('  PUT    /api/employees/:id  - Update employee');

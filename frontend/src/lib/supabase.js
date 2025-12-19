@@ -3,11 +3,6 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Debug logging - remove after fixing
-console.log('Supabase URL:', supabaseUrl);
-console.log('Supabase Key (first 20 chars):', supabaseAnonKey?.substring(0, 20));
-console.log('Supabase Key length:', supabaseAnonKey?.length);
-
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Supabase credentials not configured. Some features may not work.');
 }
@@ -16,11 +11,19 @@ export const supabase = supabaseUrl && supabaseAnonKey
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
+// Store ID for multi-tenant operations
+let currentStoreId = null;
+
+export const setLineupStoreId = (storeId) => {
+  currentStoreId = storeId;
+};
+
 // Helper functions for lineup operations
 export const lineupService = {
   // Save a lineup to the database
   async saveLineup(lineup) {
     if (!supabase) throw new Error('Supabase not configured');
+    if (!currentStoreId) throw new Error('No store selected');
 
     const { data: lineupData, error: lineupError } = await supabase
       .from('lineups')
@@ -30,7 +33,8 @@ export const lineupService = {
         end_time: lineup.endTime,
         shift_period: lineup.shiftPeriod,
         people_count: lineup.peopleCount,
-        extra_people: lineup.extraPeople || 0
+        extra_people: lineup.extraPeople || 0,
+        store_id: currentStoreId
       })
       .select()
       .single();
@@ -71,7 +75,7 @@ export const lineupService = {
     return savedLineups;
   },
 
-  // Get all saved lineups for a date
+  // Get all saved lineups for a date (filtered by store via RLS)
   async getLineupsByDate(date) {
     if (!supabase) throw new Error('Supabase not configured');
 
@@ -85,15 +89,17 @@ export const lineupService = {
         )
       `)
       .eq('lineup_date', date)
+      .eq('store_id', currentStoreId)
       .order('start_time');
 
     if (error) throw error;
     return data.map(this.transformLineup);
   },
 
-  // Get all saved lineups (grouped by date)
+  // Get all saved lineups (grouped by date, filtered by store)
   async getAllLineups() {
     if (!supabase) throw new Error('Supabase not configured');
+    if (!currentStoreId) return [];
 
     const { data, error } = await supabase
       .from('lineups')
@@ -104,6 +110,7 @@ export const lineupService = {
           employees (*)
         )
       `)
+      .eq('store_id', currentStoreId)
       .order('lineup_date', { ascending: false })
       .order('start_time');
 
@@ -179,7 +186,8 @@ export const lineupService = {
     const { error } = await supabase
       .from('lineups')
       .delete()
-      .eq('lineup_date', date);
+      .eq('lineup_date', date)
+      .eq('store_id', currentStoreId);
 
     if (error) throw error;
     return true;
@@ -195,6 +203,7 @@ export const lineupService = {
       shiftPeriod: dbLineup.shift_period,
       peopleCount: dbLineup.people_count,
       extraPeople: dbLineup.extra_people,
+      storeId: dbLineup.store_id,
       assignments: (dbLineup.lineup_assignments || [])
         .sort((a, b) => a.assignment_order - b.assignment_order)
         .map(a => ({
