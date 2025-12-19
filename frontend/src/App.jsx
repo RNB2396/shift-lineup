@@ -101,7 +101,7 @@ function AppContent() {
     <div className="app">
       <header className="app-header">
         <div className="header-left">
-          <h1>Chick-fil-A Shift Lineup</h1>
+          <h1>Shift Lineup</h1>
           {currentStore && (
             <span className="store-badge">{currentStore.name}</span>
           )}

@@ -526,6 +526,8 @@ body {
   border: 1px solid #eee;
   border-radius: 8px;
   padding: 1rem;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .shift-card.lead-row {
@@ -538,6 +540,8 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.75rem;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .shift-card-name {
@@ -547,6 +551,9 @@ body {
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
 }
 
 .shift-card-times {
@@ -651,6 +658,8 @@ body {
   padding: 1rem;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .lineup-display h2 {
@@ -676,6 +685,7 @@ body {
   border: 1px solid #ddd;
   border-radius: 8px;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .lineup-header {
@@ -723,6 +733,8 @@ body {
   padding: 0.75rem;
   border-bottom: 1px solid #eee;
   gap: 0.5rem;
+  flex-wrap: wrap;
+  box-sizing: border-box;
 }
 
 .assignment-card:last-child {
@@ -749,6 +761,8 @@ body {
   gap: 0.25rem;
   flex-wrap: wrap;
   justify-content: flex-end;
+  flex-shrink: 0;
+  max-width: 100%;
 }
 
 /* Desktop lineup table - hidden on mobile */
@@ -835,6 +849,8 @@ body {
   padding: 1rem;
   background: #f9f9f9;
   border-radius: 8px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .legend h4 {
@@ -851,6 +867,7 @@ body {
   margin-bottom: 0.5rem;
   font-size: 0.8rem;
   color: #666;
+  max-width: 100%;
 }
 
 /* ========== LINEUP PAGE LAYOUT ========== */
