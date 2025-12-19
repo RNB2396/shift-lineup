@@ -17,7 +17,7 @@ function SavedLineups() {
 
   const loadSavedLineups = async () => {
     if (!supabase) {
-      setError('Supabase not configured. Please set up environment variables.');
+      setError('Supabase not configured. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to Netlify environment variables, then redeploy.');
       setLoading(false);
       return;
     }
