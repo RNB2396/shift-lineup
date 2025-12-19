@@ -16,9 +16,11 @@ function App() {
   const loadEmployees = async () => {
     try {
       const data = await employeeApi.getAll();
-      setEmployees(data);
+      // Ensure we always have an array
+      setEmployees(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error loading employees:', error);
+      setEmployees([]);
     } finally {
       setLoading(false);
     }

@@ -1,10 +1,14 @@
 import { useState } from 'react';
 
-function ShiftInput({ employees, shiftAssignments, setShiftAssignments }) {
+function ShiftInput({ employees = [], shiftAssignments = [], setShiftAssignments }) {
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [startTime, setStartTime] = useState('14:00');
   const [endTime, setEndTime] = useState('22:00');
   const [isShiftLead, setIsShiftLead] = useState(false);
+
+  // Ensure we have arrays
+  const safeEmployees = Array.isArray(employees) ? employees : [];
+  const safeAssignments = Array.isArray(shiftAssignments) ? shiftAssignments : [];
 
   const handleAddShift = () => {
     if (!selectedEmployee) {
@@ -12,19 +16,19 @@ function ShiftInput({ employees, shiftAssignments, setShiftAssignments }) {
       return;
     }
 
-    const employee = employees.find(e => e.id === selectedEmployee);
+    const employee = safeEmployees.find(e => e.id === selectedEmployee);
     if (!employee) return;
 
     // Check if employee already has a shift
-    if (shiftAssignments.some(s => s.employeeId === selectedEmployee)) {
+    if (safeAssignments.some(s => s.employeeId === selectedEmployee)) {
       alert('This employee already has a shift assigned');
       return;
     }
 
     // If marking as shift lead, remove lead status from any existing assignment
-    let updatedAssignments = shiftAssignments;
+    let updatedAssignments = safeAssignments;
     if (isShiftLead) {
-      updatedAssignments = shiftAssignments.map(s => ({ ...s, isShiftLead: false }));
+      updatedAssignments = safeAssignments.map(s => ({ ...s, isShiftLead: false }));
     }
 
     setShiftAssignments([
@@ -46,23 +50,23 @@ function ShiftInput({ employees, shiftAssignments, setShiftAssignments }) {
   };
 
   const handleRemoveShift = (employeeId) => {
-    setShiftAssignments(shiftAssignments.filter(s => s.employeeId !== employeeId));
+    setShiftAssignments(safeAssignments.filter(s => s.employeeId !== employeeId));
   };
 
   const handleUpdateTime = (employeeId, field, value) => {
-    setShiftAssignments(shiftAssignments.map(s =>
+    setShiftAssignments(safeAssignments.map(s =>
       s.employeeId === employeeId ? { ...s, [field]: value } : s
     ));
   };
 
   const handleToggleLead = (employeeId) => {
-    setShiftAssignments(shiftAssignments.map(s => {
+    setShiftAssignments(safeAssignments.map(s => {
       if (s.employeeId === employeeId) {
         // Toggle this employee's lead status
         return { ...s, isShiftLead: !s.isShiftLead };
       } else {
         // Remove lead status from others if we're setting a new lead
-        const targetShift = shiftAssignments.find(sh => sh.employeeId === employeeId);
+        const targetShift = safeAssignments.find(sh => sh.employeeId === employeeId);
         if (!targetShift?.isShiftLead) {
           return { ...s, isShiftLead: false };
         }
@@ -72,12 +76,12 @@ function ShiftInput({ employees, shiftAssignments, setShiftAssignments }) {
   };
 
   // Get employees not yet assigned
-  const availableEmployees = employees.filter(
-    e => !shiftAssignments.some(s => s.employeeId === e.id)
+  const availableEmployees = safeEmployees.filter(
+    e => !safeAssignments.some(s => s.employeeId === e.id)
   );
 
   // Sort assignments by start time
-  const sortedAssignments = [...shiftAssignments].sort((a, b) =>
+  const sortedAssignments = [...safeAssignments].sort((a, b) =>
     a.startTime.localeCompare(b.startTime)
   );
 
@@ -254,7 +258,7 @@ function ShiftInput({ employees, shiftAssignments, setShiftAssignments }) {
       </div>
 
       <div className="shift-summary">
-        <strong>Total Staff: {shiftAssignments.length}</strong>
+        <strong>Total Staff: {safeAssignments.length}</strong>
       </div>
     </div>
   );
