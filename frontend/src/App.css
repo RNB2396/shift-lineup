@@ -1,0 +1,1171 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  background-color: #f5f5f5;
+}
+
+.app {
+  min-height: 100vh;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 1.5rem;
+  color: #666;
+}
+
+/* ========== HEADER ========== */
+.app-header {
+  background-color: #e31837;
+  color: white;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  text-align: center;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.tabs button {
+  background: transparent;
+  border: 2px solid white;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  flex: 1;
+  max-width: 150px;
+}
+
+.tabs button:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.tabs button.active {
+  background: white;
+  color: #e31837;
+}
+
+/* ========== MAIN CONTENT ========== */
+.app-main {
+  width: 100%;
+  padding: 1rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+/* ========== SECTION HEADERS ========== */
+.section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.section-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 1.25rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* ========== BUTTONS ========== */
+.btn-primary {
+  background-color: #e31837;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.25rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s;
+  touch-action: manipulation;
+}
+
+.btn-primary:hover {
+  background-color: #c41530;
+}
+
+.btn-primary:active {
+  background-color: #a01228;
+}
+
+.btn-primary:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background-color: #fff;
+  color: #333;
+  border: 2px solid #333;
+  padding: 0.75rem 1.25rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s;
+  touch-action: manipulation;
+}
+
+.btn-secondary:hover {
+  background-color: #333;
+  color: white;
+}
+
+.btn-small {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.875rem;
+  background: #333;
+  color: white;
+  border: 1px solid #333;
+  border-radius: 4px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.btn-small:hover {
+  background: #555;
+  border-color: #555;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+  border-color: #dc3545;
+}
+
+.btn-danger:hover {
+  background-color: #c82333;
+}
+
+/* ========== EMPTY STATE ========== */
+.empty-state {
+  color: #666;
+  text-align: center;
+  padding: 2rem 1rem;
+  background: white;
+  border-radius: 8px;
+  border: 2px dashed #ddd;
+}
+
+/* ========== ERROR MESSAGE ========== */
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+/* ========== EMPLOYEE MANAGER ========== */
+.employee-manager {
+  background: white;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.employee-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.employee-card {
+  background: #f9f9f9;
+  padding: 1rem;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border: 1px solid #eee;
+}
+
+.employee-info h4 {
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  color: #333;
+  font-size: 1rem;
+}
+
+.employee-positions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.employee-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.minor-badge {
+  background: #ffc107;
+  color: #333;
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.pos-badge {
+  background: #6c757d;
+  color: white;
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+}
+
+.pos-badge.best {
+  background: #28a745;
+  color: white;
+}
+
+/* ========== MODAL ========== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 1rem;
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+.modal {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 600px;
+  margin: 1rem 0;
+}
+
+.modal h3 {
+  margin-top: 0;
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.form-group input[type="text"],
+.form-group input[type="time"],
+.form-group select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  background-color: #fff;
+  color: #333;
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="time"]:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #e31837;
+  box-shadow: 0 0 0 2px rgba(227, 24, 55, 0.1);
+}
+
+.form-group.checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: #333;
+  font-weight: 500;
+}
+
+.form-group.checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #e31837;
+}
+
+.position-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.position-chip {
+  padding: 0.5rem 0.875rem;
+  background: #ffffff;
+  border: 2px solid #333;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #333;
+  font-weight: 500;
+  font-size: 0.875rem;
+  touch-action: manipulation;
+}
+
+.position-chip:hover {
+  background: #f0f0f0;
+  border-color: #e31837;
+}
+
+.position-chip.selected {
+  background: #e31837;
+  color: white;
+  border-color: #e31837;
+}
+
+.position-chip.best.selected {
+  background: #28a745;
+  color: white;
+  border-color: #28a745;
+}
+
+.form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+/* ========== SHIFT INPUT ========== */
+.shift-input {
+  background: white;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 1rem;
+}
+
+.shift-input h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #333;
+  font-size: 1.25rem;
+}
+
+.add-shift-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #f9f9f9;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.add-shift-form select {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  width: 100%;
+  background: white;
+  color: #333;
+}
+
+.add-shift-form select option {
+  color: #333;
+  background: white;
+}
+
+.time-inputs {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.time-inputs label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: #666;
+  flex: 1;
+}
+
+.time-inputs input {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.lead-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  color: #333;
+  padding: 0.75rem;
+  background: #fff3cd;
+  border-radius: 4px;
+  border: 1px solid #ffc107;
+}
+
+.lead-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #e31837;
+}
+
+/* Mobile-friendly shift cards */
+.shift-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.shift-card {
+  background: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.shift-card.lead-row {
+  background: #fff3cd;
+  border-color: #ffc107;
+}
+
+.shift-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.shift-card-name {
+  font-weight: 600;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.shift-card-times {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.shift-card-times label {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.shift-card-times input[type="time"] {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.shift-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #ddd;
+}
+
+.shift-card-lead {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.shift-card-lead input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #e31837;
+}
+
+.shift-card-hours {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+/* Desktop table - hidden on mobile */
+.shift-table {
+  display: none;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.shift-table th,
+.shift-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+  color: #333;
+}
+
+.shift-table th {
+  background: #f5f5f5;
+  font-weight: 600;
+  color: #333;
+}
+
+.shift-table input[type="time"] {
+  padding: 0.25rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.shift-table input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #e31837;
+}
+
+.shift-table .lead-row {
+  background: #fff3cd;
+}
+
+.shift-summary {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: #f0f0f0;
+  border-radius: 4px;
+  text-align: center;
+  color: #333;
+  font-weight: 600;
+}
+
+/* ========== LINEUP DISPLAY ========== */
+.lineup-display {
+  background: white;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.lineup-display h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #333;
+  font-size: 1.25rem;
+}
+
+.lineup-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.lineups-container {
+  display: grid;
+  gap: 1rem;
+}
+
+.lineup-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.lineup-header {
+  background: #f5f5f5;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.lineup-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #333;
+  width: 100%;
+}
+
+.shift-badge {
+  background: #e31837;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.count-badge {
+  background: #333;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+/* Mobile lineup cards */
+.lineup-assignments {
+  padding: 0.5rem;
+}
+
+.assignment-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  border-bottom: 1px solid #eee;
+  gap: 0.5rem;
+}
+
+.assignment-card:last-child {
+  border-bottom: none;
+}
+
+.assignment-card.needs-break {
+  background: #fff3cd;
+}
+
+.assignment-position {
+  font-weight: 600;
+  color: #333;
+  min-width: 100px;
+}
+
+.assignment-employee {
+  flex: 1;
+  color: #333;
+}
+
+.assignment-badges {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* Desktop lineup table - hidden on mobile */
+.lineup-table {
+  display: none;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.lineup-table th,
+.lineup-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+  color: #333;
+}
+
+.lineup-table th {
+  background: #fafafa;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #333;
+}
+
+.lineup-table tr.needs-break {
+  background: #fff3cd;
+}
+
+.position-cell {
+  font-weight: 500;
+  color: #333;
+}
+
+.match-badge {
+  display: inline-block;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.match-badge.best {
+  background: #28a745;
+  color: white;
+}
+
+.match-badge.capable {
+  background: #17a2b8;
+  color: white;
+}
+
+.match-badge.fallback {
+  background: #dc3545;
+  color: white;
+}
+
+.break-badge {
+  display: inline-block;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
+.break-badge.required {
+  background: #ffc107;
+  color: #333;
+}
+
+.break-badge.optional {
+  background: #e0e0e0;
+  color: #666;
+}
+
+.extra-info {
+  padding: 0.75rem 1rem;
+  background: #fff3cd;
+  color: #856404;
+  font-size: 0.875rem;
+}
+
+.legend {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.legend h4 {
+  margin: 0 0 0.5rem 0;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+/* ========== LINEUP PAGE LAYOUT ========== */
+.lineup-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Full width containers */
+.employee-manager,
+.shift-input,
+.lineup-display {
+  width: 100%;
+}
+
+/* ========================================
+   TABLET STYLES (768px+)
+   ======================================== */
+@media (min-width: 768px) {
+  .app-header {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 1rem 2rem;
+  }
+
+  .app-header h1 {
+    font-size: 1.5rem;
+    text-align: left;
+  }
+
+  .tabs button {
+    flex: none;
+    padding: 0.5rem 1.5rem;
+    font-size: 1rem;
+  }
+
+  .app-main {
+    padding: 1.5rem;
+  }
+
+  .section-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .form-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+
+  .add-shift-form {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .add-shift-form select {
+    width: auto;
+    min-width: 200px;
+  }
+
+  .time-inputs {
+    flex: none;
+  }
+
+  .time-inputs label {
+    flex: none;
+  }
+
+  .lead-checkbox {
+    flex: none;
+  }
+
+  /* Show table, hide cards on tablet */
+  .shift-list .shift-card {
+    display: none;
+  }
+
+  .shift-table {
+    display: table;
+  }
+
+  .lineup-assignments {
+    display: none;
+  }
+
+  .lineup-table {
+    display: table;
+  }
+
+  .employee-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .employee-actions {
+    margin-top: 0;
+  }
+
+  .lineup-actions {
+    flex-direction: row;
+  }
+
+  .lineup-header h3 {
+    width: auto;
+  }
+}
+
+/* ========================================
+   DESKTOP STYLES (1024px+)
+   ======================================== */
+@media (min-width: 1024px) {
+  .app-main {
+    padding: 2rem;
+  }
+
+  .employee-manager,
+  .shift-input,
+  .lineup-display {
+    padding: 1.5rem;
+  }
+
+  .employee-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .lineups-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ========================================
+   LARGE DESKTOP STYLES (1400px+)
+   ======================================== */
+@media (min-width: 1400px) {
+  .lineup-page {
+    display: grid;
+    grid-template-columns: minmax(400px, 1fr) minmax(500px, 2fr);
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .shift-input {
+    position: sticky;
+    top: 100px;
+    margin-bottom: 0;
+  }
+
+  .employee-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .lineups-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .lineup-card {
+    break-inside: avoid;
+  }
+}
+
+/* ========================================
+   EXTRA LARGE DESKTOP (1800px+)
+   ======================================== */
+@media (min-width: 1800px) {
+  .app-main {
+    max-width: 1800px;
+  }
+
+  .employee-list {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .lineups-container {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ========================================
+   TOUCH DEVICE OPTIMIZATIONS
+   ======================================== */
+@media (hover: none) and (pointer: coarse) {
+  .btn-primary,
+  .btn-secondary,
+  .btn-small,
+  .position-chip {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .tabs button {
+    min-height: 44px;
+  }
+
+  input[type="checkbox"] {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  input[type="time"],
+  select {
+    min-height: 44px;
+  }
+}
+
+/* ========================================
+   PRINT STYLES
+   ======================================== */
+@media print {
+  .app-header,
+  .add-shift-form,
+  .btn-primary,
+  .btn-secondary,
+  .btn-small,
+  .header-actions,
+  .employee-actions,
+  .legend {
+    display: none !important;
+  }
+
+  .app-main {
+    padding: 0;
+  }
+
+  .lineup-display,
+  .shift-input {
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .lineup-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
+/* ========================================
+   SAVED LINEUPS - DRAG AND DROP
+   ======================================== */
+.saved-lineups {
+  background: white;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.saved-lineups h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #333;
+  font-size: 1.25rem;
+}
+
+.date-selector {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.date-selector label {
+  font-weight: 600;
+  color: #333;
+}
+
+.date-selector select {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  min-width: 200px;
+  background: white;
+  color: #333;
+}
+
+.drag-instructions {
+  padding: 0.75rem 1rem;
+  background: #e3f2fd;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  border-left: 4px solid #2196f3;
+}
+
+.drag-instructions p {
+  margin: 0;
+  color: #1565c0;
+  font-size: 0.875rem;
+}
+
+.lineup-card.saved {
+  border-color: #28a745;
+}
+
+.lineup-assignments.draggable {
+  padding: 0.5rem;
+}
+
+.draggable-item {
+  cursor: grab;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.draggable-item:active {
+  cursor: grabbing;
+}
+
+.draggable-item.dragging {
+  opacity: 0.5;
+  background: #e0e0e0;
+}
+
+.draggable-item.drag-over {
+  border: 2px dashed #e31837;
+  background: #fff0f0;
+}
+
+.drag-handle {
+  color: #999;
+  margin-right: 0.5rem;
+  font-size: 1rem;
+  cursor: grab;
+}
+
+.saving-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.saving-message {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  font-size: 1.25rem;
+  color: #333;
+}
+
+/* Mobile: show draggable cards */
+@media (max-width: 767px) {
+  .saved-lineups .lineup-table {
+    display: none;
+  }
+
+  .saved-lineups .lineup-assignments.draggable {
+    display: block;
+  }
+}
+
+/* Tablet+: still show cards for drag/drop on saved lineups */
+@media (min-width: 768px) {
+  .saved-lineups .lineup-assignments.draggable {
+    display: block;
+  }
+
+  .saved-lineups .lineup-table {
+    display: none;
+  }
+
+  .date-selector {
+    flex-wrap: nowrap;
+  }
+}
