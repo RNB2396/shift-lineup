@@ -14,6 +14,8 @@
   padding: 40px;
   width: 100%;
   max-width: 400px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .login-header {
@@ -89,6 +91,8 @@
   cursor: pointer;
   transition: background 0.2s;
   margin-top: 10px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .login-button:hover:not(:disabled) {
@@ -117,10 +121,17 @@
   cursor: pointer;
   padding: 8px;
   text-decoration: underline;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .login-link-button:hover {
   color: #c4001e;
+}
+
+.form-group input {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .login-footer {
