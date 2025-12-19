@@ -208,6 +208,9 @@ body {
   border-radius: 4px;
   cursor: pointer;
   touch-action: manipulation;
+  flex-shrink: 0;
+  white-space: nowrap;
+  box-sizing: border-box;
 }
 
 .btn-small:hover {
@@ -439,6 +442,8 @@ body {
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   margin-bottom: 1rem;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .shift-input h2 {
