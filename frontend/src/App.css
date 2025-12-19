@@ -444,6 +444,7 @@ body {
   margin-bottom: 1rem;
   box-sizing: border-box;
   width: 100%;
+  overflow-x: auto;
 }
 
 .shift-input h2 {
@@ -613,6 +614,7 @@ body {
 .shift-table {
   display: none;
   width: 100%;
+  min-width: 600px;
   border-collapse: collapse;
   table-layout: auto;
 }
@@ -672,6 +674,7 @@ body {
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   box-sizing: border-box;
   width: 100%;
+  overflow-x: auto;
 }
 
 .lineup-display h2 {
@@ -696,8 +699,8 @@ body {
 .lineup-card {
   border: 1px solid #ddd;
   border-radius: 8px;
-  overflow: hidden;
   box-sizing: border-box;
+  overflow-x: auto;
 }
 
 .lineup-header {
@@ -781,6 +784,7 @@ body {
 .lineup-table {
   display: none;
   width: 100%;
+  min-width: 400px;
   border-collapse: collapse;
   table-layout: auto;
 }
