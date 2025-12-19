@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './components/Login';
 import StoreSelector from './components/StoreSelector';
+import ResetPassword from './components/ResetPassword';
 import EmployeeManager from './components/EmployeeManager';
 import ShiftInput from './components/ShiftInput';
 import LineupDisplay from './components/LineupDisplay';
@@ -24,6 +25,15 @@ function AppContent() {
   const [shiftAssignments, setShiftAssignments] = useState([]);
   const [lineups, setLineups] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isResetPassword, setIsResetPassword] = useState(false);
+
+  // Check if this is a password reset flow
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && hash.includes('type=recovery')) {
+      setIsResetPassword(true);
+    }
+  }, []);
 
   const loadEmployees = async () => {
     try {
@@ -48,6 +58,18 @@ function AppContent() {
   // Show loading while checking auth
   if (authLoading) {
     return <div className="loading">Loading...</div>;
+  }
+
+  // Show reset password page if in recovery flow
+  if (isResetPassword && isAuthenticated) {
+    return (
+      <ResetPassword
+        onComplete={() => {
+          setIsResetPassword(false);
+          window.history.replaceState(null, '', window.location.pathname);
+        }}
+      />
+    );
   }
 
   // Show login if not authenticated
