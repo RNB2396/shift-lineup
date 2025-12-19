@@ -183,7 +183,10 @@ function EmployeeManager({ employees, setEmployees, onRefresh }) {
         {employees.length === 0 ? (
           <p className="empty-state">No employees added yet. Add your first employee!</p>
         ) : (
-          employees.map(employee => (
+          employees.map(employee => {
+            const positions = Array.isArray(employee.positions) ? employee.positions : [];
+            const bestPositions = Array.isArray(employee.bestPositions) ? employee.bestPositions : [];
+            return (
             <div key={employee.id} className="employee-card">
               <div className="employee-info">
                 <h4>
@@ -191,10 +194,10 @@ function EmployeeManager({ employees, setEmployees, onRefresh }) {
                   {employee.isMinor && <span className="minor-badge">Minor</span>}
                 </h4>
                 <div className="employee-positions">
-                  {employee.bestPositions?.map(pos => (
+                  {bestPositions.map(pos => (
                     <span key={pos} className="pos-badge best">{pos}</span>
                   ))}
-                  {employee.positions?.filter(p => !employee.bestPositions?.includes(p)).map(pos => (
+                  {positions.filter(p => !bestPositions.includes(p)).map(pos => (
                     <span key={pos} className="pos-badge">{pos}</span>
                   ))}
                 </div>
@@ -204,7 +207,8 @@ function EmployeeManager({ employees, setEmployees, onRefresh }) {
                 <button onClick={() => handleDelete(employee.id)} className="btn-small btn-danger">Delete</button>
               </div>
             </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
