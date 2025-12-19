@@ -12,9 +12,10 @@ dist
 dist-ssr
 *.local
 
-# Environment variables (keep .env.production for deployment)
+# Environment variables - use platform env vars (Netlify dashboard) for production
 .env
 .env.local
+.env.production
 
 # Editor directories and files
 .vscode/*

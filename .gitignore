@@ -5,6 +5,7 @@ node_modules/
 .env
 .env.local
 .env.*.local
+.env.production
 
 # Build outputs
 dist/
@@ -31,3 +32,6 @@ backend/data/employees.json
 *.tmp
 *.temp
 nul
+
+# Local Netlify folder
+.netlify
