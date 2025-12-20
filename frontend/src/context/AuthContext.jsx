@@ -152,10 +152,10 @@ export function AuthProvider({ children }) {
     return session?.access_token || null;
   };
 
-  // Role hierarchy: owner > director > coordinator > manager > viewer
+  // Role hierarchy: owner > director > coordinator > viewer
   const canInviteUsers = ['owner', 'director', 'coordinator'].includes(currentStore?.role);
-  const canManageEmployees = ['owner', 'director', 'coordinator', 'manager'].includes(currentStore?.role);
-  const canEditLineups = ['owner', 'director', 'coordinator', 'manager'].includes(currentStore?.role);
+  const canManageEmployees = ['owner', 'director', 'coordinator'].includes(currentStore?.role);
+  const canEditLineups = ['owner', 'director', 'coordinator'].includes(currentStore?.role);
 
   const value = {
     user,

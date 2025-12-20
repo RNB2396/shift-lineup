@@ -193,7 +193,6 @@ function AcceptInvite({ token, onComplete }) {
   const roleLabels = {
     director: 'Director',
     coordinator: 'Coordinator',
-    manager: 'Manager',
     viewer: 'Viewer'
   };
 

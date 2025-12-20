@@ -22,21 +22,19 @@ function TeamManager() {
     owner: 'Owner',
     director: 'Director',
     coordinator: 'Coordinator',
-    manager: 'Manager',
     viewer: 'Viewer'
   };
 
   const roleDescriptions = {
     director: 'Can manage team, employees, and lineups',
     coordinator: 'Can manage employees and lineups',
-    manager: 'Can manage employees and lineups',
     viewer: 'Can only view lineups'
   };
 
   // Roles that can be invited (owners and directors can invite these)
   const invitableRoles = userRole === 'owner'
-    ? ['director', 'coordinator', 'manager', 'viewer']
-    : ['coordinator', 'manager', 'viewer'];
+    ? ['director', 'coordinator', 'viewer']
+    : ['coordinator', 'viewer'];
 
   useEffect(() => {
     if (currentStore?.id) {
@@ -202,10 +200,10 @@ function TeamManager() {
   const getAssignableRoles = (member) => {
     if (userRole === 'owner') {
       // Owners can assign any role except owner
-      return ['director', 'coordinator', 'manager', 'viewer'];
+      return ['director', 'coordinator', 'viewer'];
     } else if (userRole === 'director') {
-      // Directors can only assign coordinator, manager, viewer
-      return ['coordinator', 'manager', 'viewer'];
+      // Directors can only assign coordinator, viewer
+      return ['coordinator', 'viewer'];
     }
     return [];
   };
