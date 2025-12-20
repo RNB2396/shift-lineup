@@ -8,6 +8,8 @@ const supabaseKey = process.env.SUPABASE_ANON_KEY;
  * and attaches user info to the request object
  */
 async function authMiddleware(req, res, next) {
+  console.log('Auth middleware called for:', req.path);
+
   // Skip auth if Supabase is not configured (local dev mode)
   if (!supabaseUrl || !supabaseKey) {
     console.warn('Auth middleware skipped: Supabase not configured');
@@ -17,6 +19,7 @@ async function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.log('No auth header, returning 401');
     return res.status(401).json({ error: 'Missing or invalid authorization header' });
   }
 
