@@ -1108,7 +1108,7 @@ body {
 /* ========================================
    TABLET STYLES (768px+)
    ======================================== */
-@media (min-width: 768px) {
+@media (min-width: 960px) {
   /* Hide mobile menu, show desktop tabs */
   .mobile-menu-btn {
     display: none;
@@ -1121,6 +1121,9 @@ body {
   .tabs.desktop-tabs {
     display: flex;
   }
+}
+
+@media (min-width: 768px) {
 
   .app-header {
     flex-direction: row;
