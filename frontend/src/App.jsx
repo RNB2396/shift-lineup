@@ -196,14 +196,12 @@ function AppContent() {
                   Employees ({employees.length})
                 </button>
               )}
-              {canInviteUsers && (
-                <button
-                  className={activeTab === 'team' ? 'active' : ''}
-                  onClick={() => handleTabClick('team')}
-                >
-                  Team
-                </button>
-              )}
+              <button
+                className={activeTab === 'team' ? 'active' : ''}
+                onClick={() => handleTabClick('team')}
+              >
+                Team
+              </button>
               <button className="logout-btn" onClick={logout}>
                 Sign Out
               </button>
@@ -235,14 +233,12 @@ function AppContent() {
               Employees ({employees.length})
             </button>
           )}
-          {canInviteUsers && (
-            <button
-              className={activeTab === 'team' ? 'active' : ''}
-              onClick={() => setActiveTab('team')}
-            >
-              Team
-            </button>
-          )}
+          <button
+            className={activeTab === 'team' ? 'active' : ''}
+            onClick={() => setActiveTab('team')}
+          >
+            Team
+          </button>
           <button className="logout-btn" onClick={logout}>
             Sign Out
           </button>

@@ -112,13 +112,14 @@ function AcceptInvite({ token, onComplete }) {
         throw new Error('Failed to create account');
       }
 
-      // Update profile with username
+      // Update profile with username and full name from invitation
       await supabase
         .from('profiles')
         .upsert({
           id: userId,
           email: fakeEmail,
-          username: trimmedUsername
+          username: trimmedUsername,
+          full_name: invitation.name || trimmedUsername
         });
 
       // Add user to store

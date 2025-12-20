@@ -57,17 +57,18 @@ function TeamManager() {
           user_id,
           profiles (
             username,
-            email
+            email,
+            full_name
           )
         `)
         .eq('store_id', currentStore.id);
 
       if (membersError) throw membersError;
 
-      // Flatten the profile data - prefer username over email
+      // Flatten the profile data - prefer full_name over username over email
       const membersWithUsernames = members.map(member => ({
         ...member,
-        displayName: member.profiles?.username || member.profiles?.email || 'Unknown'
+        displayName: member.profiles?.full_name || member.profiles?.username || member.profiles?.email || 'Unknown'
       }));
 
       setTeamMembers(membersWithUsernames);
