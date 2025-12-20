@@ -1020,12 +1020,12 @@ body {
 /* Column widths for lineup table */
 .lineup-table th:nth-child(1),
 .lineup-table td:nth-child(1) {
-  width: 30%;
+  width: 28%;
 }
 
 .lineup-table th:nth-child(2),
 .lineup-table td:nth-child(2) {
-  width: 35%;
+  width: 30%;
 }
 
 .lineup-table th:nth-child(3),
@@ -1035,7 +1035,8 @@ body {
 
 .lineup-table th:nth-child(4),
 .lineup-table td:nth-child(4) {
-  width: 17%;
+  width: 24%;
+  overflow: visible;
 }
 
 .lineup-table th {

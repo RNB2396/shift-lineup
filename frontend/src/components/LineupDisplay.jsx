@@ -197,7 +197,7 @@ function LineupDisplay({ shiftAssignments, lineups, setLineups, closingLineup, s
                         <td>
                           {assignment.needsBreak && (
                             <span className={`break-badge ${assignment.breakType}`}>
-                              {assignment.breakType === 'required' ? 'REQUIRED' : 'Optional'}
+                              {assignment.breakType === 'required' ? 'REQ' : 'OPT'}
                             </span>
                           )}
                         </td>
