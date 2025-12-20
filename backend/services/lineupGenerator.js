@@ -418,7 +418,10 @@ function assignEmployeesToPositions(workingEmployees, positions, startTime, prev
   // This ensures the best possible lineup by allowing "best" employees to take
   // positions from "fallback" or "capable" employees
   let improved = true;
-  while (improved) {
+  let iterations = 0;
+  const maxIterations = 100; // Safety limit to prevent infinite loops
+  while (improved && iterations < maxIterations) {
+    iterations++;
     improved = false;
 
     for (let i = 0; i < assignments.length; i++) {
