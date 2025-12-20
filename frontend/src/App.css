@@ -1020,12 +1020,12 @@ body {
 /* Column widths for lineup table */
 .lineup-table th:nth-child(1),
 .lineup-table td:nth-child(1) {
-  width: 28%;
+  width: 25%;
 }
 
 .lineup-table th:nth-child(2),
 .lineup-table td:nth-child(2) {
-  width: 30%;
+  width: 35%;
 }
 
 .lineup-table th:nth-child(3),
@@ -1302,7 +1302,7 @@ body {
   }
 
   .lineups-container {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1333,6 +1333,7 @@ body {
 
   .lineup-card {
     break-inside: avoid;
+    min-width: 280px;
   }
 }
 
@@ -1350,6 +1351,15 @@ body {
 
   .lineups-container {
     grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ========================================
+   ULTRA WIDE DESKTOP (2200px+)
+   ======================================== */
+@media (min-width: 2200px) {
+  .lineups-container {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 

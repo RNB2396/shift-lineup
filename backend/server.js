@@ -78,6 +78,7 @@ function positionToApiFormat(row) {
     priority: row.priority || 99,
     timePeriods: row.time_periods || ['all'],
     isActive: row.is_active !== false,
+    requiresClosing: row.requires_closing || false,
     storeId: row.store_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at
@@ -92,6 +93,7 @@ function positionToDbFormat(data, storeId) {
     priority: data.priority || 99,
     time_periods: data.timePeriods || ['all'],
     is_active: data.isActive !== false,
+    requires_closing: data.requiresClosing || false,
     store_id: storeId
   };
 }
@@ -371,7 +373,8 @@ app.put('/api/positions/:id', authMiddleware, requireStore, requireManager, asyn
         house_type: req.body.houseType,
         priority: req.body.priority,
         time_periods: req.body.timePeriods,
-        is_active: req.body.isActive
+        is_active: req.body.isActive,
+        requires_closing: req.body.requiresClosing
       };
 
       // Remove undefined fields
@@ -481,7 +484,8 @@ app.post('/api/lineup/generate', authMiddleware, requireStore, async (req, res) 
         name: pos.name,
         houseType: pos.house_type,
         priority: pos.priority,
-        timePeriods: pos.time_periods || ['all']
+        timePeriods: pos.time_periods || ['all'],
+        requiresClosing: pos.requires_closing || false
       }));
     } else {
       const data = readEmployeesFromFile();

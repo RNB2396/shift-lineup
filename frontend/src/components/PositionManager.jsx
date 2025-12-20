@@ -20,7 +20,8 @@ function PositionManager({ houseType }) {
     name: '',
     houseType: houseType,
     priority: 99,
-    timePeriods: ['all']
+    timePeriods: ['all'],
+    requiresClosing: false
   });
 
   useEffect(() => {
@@ -48,7 +49,8 @@ function PositionManager({ houseType }) {
       name: '',
       houseType: houseType,
       priority: 99,
-      timePeriods: ['all']
+      timePeriods: ['all'],
+      requiresClosing: false
     });
     setEditingPosition(null);
     setShowForm(false);
@@ -75,7 +77,8 @@ function PositionManager({ houseType }) {
       name: position.name,
       houseType: position.houseType,
       priority: position.priority,
-      timePeriods: position.timePeriods || ['all']
+      timePeriods: position.timePeriods || ['all'],
+      requiresClosing: position.requiresClosing || false
     });
     setEditingPosition(position);
     setShowForm(true);
@@ -175,6 +178,18 @@ function PositionManager({ houseType }) {
                 </div>
               </div>
 
+              <div className="form-group checkbox-group">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={formData.requiresClosing}
+                    onChange={(e) => setFormData({ ...formData, requiresClosing: e.target.checked })}
+                  />
+                  Requires Closing
+                </label>
+                <small>Check this if the position requires closing duties (will be included in the closing lineup).</small>
+              </div>
+
               <div className="form-actions">
                 <button type="button" onClick={resetForm} className="btn-secondary">
                   Cancel
@@ -201,6 +216,9 @@ function PositionManager({ houseType }) {
                 <div className="position-header">
                   <h4>{position.name}</h4>
                   <span className="priority-badge">Priority: {position.priority}</span>
+                  {position.requiresClosing && (
+                    <span className="closing-badge">Closing</span>
+                  )}
                 </div>
                 <div className="position-periods">
                   {(position.timePeriods || ['all']).map(period => (

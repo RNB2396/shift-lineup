@@ -617,18 +617,17 @@ function generateLineups(shiftAssignments, employees, dbPositions = null) {
   }
 
   // Generate closing lineup based on the last lineup period
-  const closingLineup = generateClosingLineup(lineups, enrichedAssignments);
+  const closingLineup = generateClosingLineup(lineups, enrichedAssignments, dbPositions);
 
   return { lineups, closingLineup };
 }
 
 /**
  * Generate closing lineup assignments
- * Closing positions: breading, machines, primary, secondary
- * People stay in their current position if it's a closing position
- * Others are listed separately as "available"
+ * Uses positions marked with requiresClosing from the database
+ * Assigns closers to positions based on best match
  */
-function generateClosingLineup(lineups, enrichedAssignments) {
+function generateClosingLineup(lineups, enrichedAssignments, dbPositions = []) {
   if (lineups.length === 0) return null;
 
   // Get the last lineup of the day
@@ -636,73 +635,87 @@ function generateClosingLineup(lineups, enrichedAssignments) {
 
   // Find employees who are closing (working until the end)
   const lastEndTime = lastLineup.endTime;
-  const closingEmployeeIds = new Set(
-    enrichedAssignments
-      .filter(emp => emp.endTime === lastEndTime)
-      .map(emp => emp.employeeId || emp.id || emp.name)
-  );
+  const closingEmployees = enrichedAssignments.filter(emp => emp.endTime === lastEndTime);
 
-  if (closingEmployeeIds.size === 0) return null;
+  if (closingEmployees.length === 0) return null;
+
+  // Get closing positions from database (positions with requiresClosing = true)
+  const closingPositions = dbPositions
+    .filter(pos => pos.requiresClosing)
+    .sort((a, b) => (a.priority || 99) - (b.priority || 99))
+    .map(pos => pos.name);
+
+  // If no closing positions defined, return null (no closing lineup)
+  if (closingPositions.length === 0) {
+    return null;
+  }
 
   const closingAssignments = [];
-  const availableEmployees = [];
-  const assignedIds = new Set();
+  const assignedEmployeeIds = new Set();
+  const unassignedClosers = [...closingEmployees];
 
-  // Go through the last lineup and keep closers in their positions
+  // Build a map of employee's current position from the last lineup
+  const employeeCurrentPositions = {};
   for (const assignment of lastLineup.assignments) {
     const empId = assignment.employee.employeeId || assignment.employee.id || assignment.employee.name;
+    employeeCurrentPositions[empId] = assignment.position.toLowerCase().replace(' (floating)', '').replace(' (lead)', '');
+  }
 
-    // Skip if this employee isn't closing
-    if (!closingEmployeeIds.has(empId)) continue;
+  // For each closing position, find the best employee
+  for (const position of closingPositions) {
+    let bestEmployee = null;
+    let bestScore = -1;
+    let bestIndex = -1;
+    const positionLower = position.toLowerCase();
 
-    // Check if their current position is a closing position
-    const currentPosition = assignment.position.toLowerCase().replace(' (floating)', '').replace(' (lead)', '');
+    for (let i = 0; i < unassignedClosers.length; i++) {
+      const employee = unassignedClosers[i];
+      const empId = employee.employeeId || employee.id || employee.name;
+      const currentPos = employeeCurrentPositions[empId] || '';
 
-    // Map position to closing position name
-    let closingPosition = null;
-    if (currentPosition === 'breading' || currentPosition === 'breader') {
-      closingPosition = 'breading';
-    } else if (currentPosition === 'machines') {
-      closingPosition = 'machines';
-    } else if (currentPosition === 'primary') {
-      closingPosition = 'primary';
-    } else if (currentPosition === 'secondary1' || currentPosition === 'secondary') {
-      closingPosition = 'secondary';
-    } else if (currentPosition.includes('lead') || assignment.employee.isShiftLead) {
-      closingPosition = 'team member';
+      let score = 0;
+
+      // Big bonus if already in this position
+      if (currentPos === positionLower || currentPos.includes(positionLower)) {
+        score += 50;
+      }
+
+      // Best position skill
+      if (employee.bestPositions && employee.bestPositions.some(p => p.toLowerCase() === positionLower)) {
+        score += 10;
+      }
+      // Can do position skill
+      else if (employee.positions && employee.positions.some(p => p.toLowerCase() === positionLower)) {
+        score += 5;
+      }
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestEmployee = employee;
+        bestIndex = i;
+      }
     }
 
-    if (closingPosition) {
+    if (bestEmployee) {
+      const empId = bestEmployee.employeeId || bestEmployee.id || bestEmployee.name;
       closingAssignments.push({
-        employee: assignment.employee,
-        position: closingPosition,
-        matchQuality: 'best'
+        employee: bestEmployee,
+        position: position,
+        matchQuality: bestScore >= 50 ? 'best' : bestScore >= 5 ? 'capable' : 'fallback'
       });
-      assignedIds.add(empId);
+      assignedEmployeeIds.add(empId);
+      unassignedClosers.splice(bestIndex, 1);
     }
   }
 
-  // Find closers who don't have a closing task
-  for (const assignment of lastLineup.assignments) {
-    const empId = assignment.employee.employeeId || assignment.employee.id || assignment.employee.name;
-
-    if (closingEmployeeIds.has(empId) && !assignedIds.has(empId)) {
-      availableEmployees.push({
-        employee: assignment.employee,
-        position: 'available',
-        matchQuality: 'extra'
-      });
-    }
+  // Any remaining closers become available
+  for (const employee of unassignedClosers) {
+    closingAssignments.push({
+      employee: employee,
+      position: 'available',
+      matchQuality: 'extra'
+    });
   }
-
-  // Sort by position priority for display
-  const positionOrder = ['breading', 'machines', 'primary', 'secondary', 'team member'];
-  closingAssignments.sort((a, b) => {
-    return positionOrder.indexOf(a.position) - positionOrder.indexOf(b.position);
-  });
-
-  // Add available employees at the end
-  closingAssignments.push(...availableEmployees);
 
   return {
     title: 'Closing',
