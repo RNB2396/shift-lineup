@@ -1,12 +1,28 @@
 import { useState } from 'react';
 
-function ShiftInput({ employees = [], shiftAssignments = [], setShiftAssignments }) {
+function ShiftInput({ employees = [], shiftAssignments = [], setShiftAssignments, lineupDate, setLineupDate }) {
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [startTime, setStartTime] = useState('14:00');
   const [endTime, setEndTime] = useState('22:00');
   const [isShiftLead, setIsShiftLead] = useState(false);
   const [isBooster, setIsBooster] = useState(false);
   const [isInTraining, setIsInTraining] = useState(false);
+
+  // Format date for display
+  const formatDateDisplay = (dateStr) => {
+    const date = new Date(dateStr + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    if (date.getTime() === today.getTime()) {
+      return 'Today';
+    } else if (date.getTime() === tomorrow.getTime()) {
+      return 'Tomorrow';
+    }
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  };
 
   // Ensure we have arrays
   const safeEmployees = Array.isArray(employees) ? employees : [];
@@ -80,7 +96,19 @@ function ShiftInput({ employees = [], shiftAssignments = [], setShiftAssignments
 
   return (
     <div className="shift-input">
-      <h2>Today's Shift Assignments</h2>
+      <div className="shift-input-header">
+        <h2>Shift Assignments</h2>
+        <div className="date-picker">
+          <label>
+            <span className="date-label">{formatDateDisplay(lineupDate)}</span>
+            <input
+              type="date"
+              value={lineupDate}
+              onChange={(e) => setLineupDate(e.target.value)}
+            />
+          </label>
+        </div>
+      </div>
 
       <div className="add-shift-form">
         <select

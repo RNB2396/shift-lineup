@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { lineupApi } from '../api';
 import { lineupService, supabase } from '../lib/supabase';
 
-function LineupDisplay({ shiftAssignments, lineups, setLineups, closingLineup, setClosingLineup }) {
+function LineupDisplay({ shiftAssignments, lineups, setLineups, closingLineup, setClosingLineup, lineupDate }) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -57,9 +57,9 @@ function LineupDisplay({ shiftAssignments, lineups, setLineups, closingLineup, s
 
     setSaving(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
-      await lineupService.saveAllLineups(lineups, today);
-      alert('Lineups saved successfully! View them in the Saved Lineups tab.');
+      await lineupService.saveAllLineups(lineups, lineupDate);
+      const dateDisplay = new Date(lineupDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      alert(`Lineups saved for ${dateDisplay}! View them in the Saved Lineups tab.`);
     } catch (err) {
       console.error('Error saving lineups:', err);
       alert('Failed to save lineups: ' + err.message);

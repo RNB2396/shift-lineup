@@ -537,9 +537,45 @@ body {
 
 .shift-input h2 {
   margin-top: 0;
-  margin-bottom: 1rem;
+  margin-bottom: 0;
   color: #333;
   font-size: 1.25rem;
+}
+
+.shift-input-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.date-picker {
+  display: flex;
+  align-items: center;
+}
+
+.date-picker label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.date-label {
+  background: #e31837;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.date-picker input[type="date"] {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
 }
 
 .add-shift-form {
@@ -1174,6 +1210,12 @@ body {
   .form-actions {
     flex-direction: row;
     justify-content: flex-end;
+  }
+
+  .shift-input-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
   }
 
   .add-shift-form {
