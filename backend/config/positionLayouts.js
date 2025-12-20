@@ -20,8 +20,8 @@ const positionLayouts = {
     endTime: "14:00",
     layouts: {
       5: ["primary", "secondary1", "breading", "machines", "DT fries"],
-      6: ["primary", "secondary1", "secondary2/buns", "breading", "machines", "fries"],
-      7: ["primary", "secondary1", "breading", "machines", "DT fries", "buns"],
+      6: ["primary", "secondary1", "secondary2", "breading", "machines", "DT fries"],
+      7: ["primary", "secondary1", "secondary2", "breading", "machines", "DT fries", "buns"],
       8: ["primary", "secondary1", "secondary2", "breading", "machines", "buns", "DT fries", "FC fries"]
     }
   },
@@ -30,10 +30,11 @@ const positionLayouts = {
     startTime: "14:00",
     endTime: "17:00",
     layouts: {
-      4: ["primary/DT fries", "secondary1", "breading", "machines"],
+      4: ["primary", "secondary1", "breading", "machines"],
       5: ["primary", "secondary1", "breading", "machines", "DT fries"],
-      6: ["primary", "secondary1", "breading", "machines", "DT fries", "checklist"],
-      7: ["primary", "secondary1", "secondary2/buns", "breading", "machines", "DT fries", "checklist"]
+      6: ["primary", "secondary1", "secondary2", "breading", "machines", "DT fries"],
+      7: ["primary", "secondary1", "secondary2", "breading", "machines", "DT fries", "buns"],
+      8: ["primary", "secondary1", "secondary2", "breading", "machines", "DT fries", "buns", "FC fries"]
     }
   },
   dinner: {

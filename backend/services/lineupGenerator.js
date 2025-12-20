@@ -527,7 +527,9 @@ function generateLineups(shiftAssignments, employees) {
 
 /**
  * Generate closing lineup assignments
- * Closing positions: breading, machines, primary, secondary, team member (shift lead), dishes (DT fries person)
+ * Closing positions: breading, machines, primary, secondary
+ * People stay in their current position if it's a closing position
+ * Shift lead does "team member" duties
  */
 function generateClosingLineup(lineups, enrichedAssignments) {
   if (lineups.length === 0) return null;
@@ -537,85 +539,59 @@ function generateClosingLineup(lineups, enrichedAssignments) {
 
   // Find employees who are closing (working until the end)
   const lastEndTime = lastLineup.endTime;
-  const closingEmployees = enrichedAssignments.filter(emp => emp.endTime === lastEndTime);
+  const closingEmployeeIds = new Set(
+    enrichedAssignments
+      .filter(emp => emp.endTime === lastEndTime)
+      .map(emp => emp.employeeId || emp.id || emp.name)
+  );
 
-  if (closingEmployees.length === 0) return null;
+  if (closingEmployeeIds.size === 0) return null;
 
   const closingAssignments = [];
-  const assignedEmployeeIds = new Set();
 
-  // Closing positions in order
-  const closingPositions = ['breading', 'machines', 'primary', 'secondary', 'team member', 'dishes'];
+  // Closing positions - people stay in these positions
+  const closingPositions = ['breading', 'machines', 'primary', 'secondary1', 'secondary2'];
 
-  // Find shift lead for "team member" position
-  const shiftLead = closingEmployees.find(emp => emp.isShiftLead);
+  // Go through the last lineup and keep closers in their positions
+  for (const assignment of lastLineup.assignments) {
+    const empId = assignment.employee.employeeId || assignment.employee.id || assignment.employee.name;
 
-  // Find who was on DT fries in the last lineup for "dishes"
-  const dtFriesAssignment = lastLineup.assignments.find(a =>
-    a.position.toLowerCase().includes('dt fries') || a.position.toLowerCase().includes('fries')
-  );
-  const dtFriesPerson = dtFriesAssignment ? dtFriesAssignment.employee : null;
+    // Skip if this employee isn't closing
+    if (!closingEmployeeIds.has(empId)) continue;
 
-  for (const position of closingPositions) {
-    let assignedEmployee = null;
-    let matchQuality = 'capable';
+    // Check if their current position is a closing position
+    const currentPosition = assignment.position.toLowerCase().replace(' (floating)', '').replace(' (lead)', '');
 
-    if (position === 'team member' && shiftLead) {
-      // Shift lead does team member
-      assignedEmployee = shiftLead;
-      matchQuality = 'best';
-      assignedEmployeeIds.add(shiftLead.employeeId || shiftLead.id || shiftLead.name);
-    } else if (position === 'dishes' && dtFriesPerson) {
-      // DT fries person goes to dishes
-      const empId = dtFriesPerson.employeeId || dtFriesPerson.id || dtFriesPerson.name;
-      if (!assignedEmployeeIds.has(empId)) {
-        assignedEmployee = dtFriesPerson;
-        matchQuality = 'capable';
-        assignedEmployeeIds.add(empId);
-      }
+    // Map position to closing position name
+    let closingPosition = null;
+    if (currentPosition === 'breading' || currentPosition === 'breader') {
+      closingPosition = 'breading';
+    } else if (currentPosition === 'machines') {
+      closingPosition = 'machines';
+    } else if (currentPosition === 'primary') {
+      closingPosition = 'primary';
+    } else if (currentPosition === 'secondary1' || currentPosition === 'secondary') {
+      closingPosition = 'secondary';
+    } else if (currentPosition === 'secondary2') {
+      closingPosition = 'secondary 2';
+    } else if (currentPosition.includes('lead') || assignment.employee.isShiftLead) {
+      closingPosition = 'team member';
     }
 
-    // If not already assigned, find best available employee for this position
-    if (!assignedEmployee) {
-      let bestScore = 0;
-      let bestEmp = null;
-
-      for (const emp of closingEmployees) {
-        const empId = emp.employeeId || emp.id || emp.name;
-        if (assignedEmployeeIds.has(empId)) continue;
-
-        // Check if employee is good at this position
-        let score = 0;
-        if (emp.bestPositions && emp.bestPositions.includes(position)) {
-          score = 10;
-        } else if (emp.positions && emp.positions.includes(position)) {
-          score = 5;
-        } else {
-          // For closing, anyone can do these positions
-          score = 1;
-        }
-
-        if (score > bestScore) {
-          bestScore = score;
-          bestEmp = emp;
-        }
-      }
-
-      if (bestEmp) {
-        assignedEmployee = bestEmp;
-        matchQuality = bestScore >= 10 ? 'best' : bestScore >= 5 ? 'capable' : 'fallback';
-        assignedEmployeeIds.add(bestEmp.employeeId || bestEmp.id || bestEmp.name);
-      }
-    }
-
-    if (assignedEmployee) {
+    if (closingPosition) {
       closingAssignments.push({
-        employee: assignedEmployee,
-        position: position,
-        matchQuality: matchQuality
+        employee: assignment.employee,
+        position: closingPosition,
+        matchQuality: 'best'
       });
     }
   }
+
+  // Sort by position priority for display
+  const positionOrder = ['breading', 'machines', 'primary', 'secondary', 'secondary 2', 'team member'];
+  closingAssignments.sort((a, b) => {
+    return positionOrder.indexOf(a.position) - positionOrder.indexOf(b.position);
+  });
 
   return {
     title: 'Closing',
