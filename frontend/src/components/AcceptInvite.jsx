@@ -191,6 +191,7 @@ function AcceptInvite({ token, onComplete }) {
   }
 
   const roleLabels = {
+    owner: 'Operator',
     director: 'Director',
     coordinator: 'Coordinator',
     viewer: 'Viewer'

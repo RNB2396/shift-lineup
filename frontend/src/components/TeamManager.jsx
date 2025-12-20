@@ -19,7 +19,7 @@ function TeamManager() {
   const [inviteLink, setInviteLink] = useState('');
 
   const roleLabels = {
-    owner: 'Owner',
+    owner: 'Operator',
     director: 'Director',
     coordinator: 'Coordinator',
     viewer: 'Viewer'

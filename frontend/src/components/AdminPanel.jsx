@@ -191,7 +191,7 @@ function AdminPanel() {
     if (owner?.profiles) {
       return owner.profiles.full_name || owner.profiles.username || 'Unknown';
     }
-    return 'No owner yet';
+    return 'No operator yet';
   };
 
   const getTeamCount = (store) => {
@@ -293,7 +293,7 @@ function AdminPanel() {
                   )}
                 </div>
                 <div className="store-card-info">
-                  <p><strong>Owner:</strong> {getStoreOwner(store)}</p>
+                  <p><strong>Operator:</strong> {getStoreOwner(store)}</p>
                   <p><strong>Team:</strong> {getTeamCount(store)} member{getTeamCount(store) !== 1 ? 's' : ''}</p>
                   <p><strong>Created:</strong> {formatDate(store.created_at)}</p>
                 </div>
@@ -332,7 +332,7 @@ function AdminPanel() {
                           onChange={(e) => setInviteRole(e.target.value)}
                           disabled={sending}
                         >
-                          <option value="owner">Owner</option>
+                          <option value="owner">Operator</option>
                           <option value="director">Director</option>
                           <option value="coordinator">Coordinator</option>
                           <option value="viewer">Viewer</option>
