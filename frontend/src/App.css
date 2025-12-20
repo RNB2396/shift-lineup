@@ -105,8 +105,8 @@ body {
   cursor: pointer;
 }
 
-/* Mobile menu button - visible on mobile only */
-.mobile-menu-btn {
+/* Menu button - always visible */
+.menu-btn {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -138,8 +138,8 @@ body {
   white-space: nowrap;
 }
 
-/* Mobile menu overlay */
-.mobile-menu-overlay {
+/* Menu overlay */
+.menu-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -149,20 +149,21 @@ body {
   z-index: 150;
 }
 
-/* Mobile dropdown menu */
-.mobile-menu {
+/* Dropdown menu */
+.dropdown-menu {
   position: absolute;
   top: 100%;
-  left: 0;
   right: 0;
+  min-width: 200px;
   background: #c41530;
   display: flex;
   flex-direction: column;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   z-index: 200;
+  border-radius: 0 0 8px 8px;
 }
 
-.mobile-menu button {
+.dropdown-menu button {
   background: transparent;
   border: none;
   border-bottom: 1px solid rgba(255,255,255,0.2);
@@ -174,51 +175,23 @@ body {
   transition: background 0.2s;
 }
 
-.mobile-menu button:last-child {
+.dropdown-menu button:last-child {
   border-bottom: none;
+  border-radius: 0 0 8px 8px;
 }
 
-.mobile-menu button:hover {
+.dropdown-menu button:hover {
   background: rgba(255,255,255,0.1);
 }
 
-.mobile-menu button.active {
+.dropdown-menu button.active {
   background: rgba(255,255,255,0.2);
   font-weight: 600;
 }
 
-.mobile-menu .logout-btn {
+.dropdown-menu .logout-btn {
   background: rgba(0,0,0,0.2);
   margin-top: 0.5rem;
-}
-
-/* Desktop tabs - hidden on mobile */
-.tabs.desktop-tabs {
-  display: none;
-  gap: 0.5rem;
-  justify-content: center;
-}
-
-.tabs button {
-  background: transparent;
-  border: 2px solid white;
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.875rem;
-  transition: all 0.2s;
-  flex: 1;
-  max-width: 150px;
-}
-
-.tabs button:hover {
-  background: rgba(255,255,255,0.1);
-}
-
-.tabs button.active {
-  background: white;
-  color: #e31837;
 }
 
 /* ========== MAIN CONTENT ========== */
@@ -1162,20 +1135,6 @@ body {
 /* ========================================
    TABLET STYLES (768px+)
    ======================================== */
-@media (min-width: 960px) {
-  /* Hide mobile menu, show desktop tabs */
-  .mobile-menu-btn {
-    display: none;
-  }
-
-  .mobile-menu-overlay {
-    display: none;
-  }
-
-  .tabs.desktop-tabs {
-    display: flex;
-  }
-}
 
 @media (min-width: 768px) {
 

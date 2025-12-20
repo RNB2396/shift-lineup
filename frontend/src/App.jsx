@@ -197,9 +197,9 @@ function AppContent() {
           )}
         </div>
 
-        {/* Mobile hamburger button */}
+        {/* Hamburger menu button */}
         <button
-          className="mobile-menu-btn"
+          className="menu-btn"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label="Toggle menu"
         >
@@ -211,11 +211,11 @@ function AppContent() {
           <span className="current-tab-label">{getTabLabel(activeTab)}</span>
         </button>
 
-        {/* Mobile dropdown menu */}
+        {/* Dropdown menu */}
         {mobileMenuOpen && (
           <>
-            <div className="mobile-menu-overlay" onClick={() => setMobileMenuOpen(false)} />
-            <nav className="mobile-menu" onClick={(e) => e.stopPropagation()}>
+            <div className="menu-overlay" onClick={() => setMobileMenuOpen(false)} />
+            <nav className="dropdown-menu" onClick={(e) => e.stopPropagation()}>
               {canEditLineups && (
                 <button
                   className={activeTab === 'lineup' ? 'active' : ''}
@@ -258,49 +258,6 @@ function AppContent() {
             </nav>
           </>
         )}
-
-        {/* Desktop tabs */}
-        <nav className="tabs desktop-tabs">
-          {canEditLineups && (
-            <button
-              className={activeTab === 'lineup' ? 'active' : ''}
-              onClick={() => setActiveTab('lineup')}
-            >
-              Lineup
-            </button>
-          )}
-          <button
-            className={activeTab === 'saved' ? 'active' : ''}
-            onClick={() => setActiveTab('saved')}
-          >
-            Saved Lineups
-          </button>
-          {canEditLineups && (
-            <button
-              className={activeTab === 'employees' ? 'active' : ''}
-              onClick={() => setActiveTab('employees')}
-            >
-              Employees ({employees.length})
-            </button>
-          )}
-          {canEditLineups && (
-            <button
-              className={activeTab === 'positions' ? 'active' : ''}
-              onClick={() => setActiveTab('positions')}
-            >
-              Positions
-            </button>
-          )}
-          <button
-            className={activeTab === 'team' ? 'active' : ''}
-            onClick={() => setActiveTab('team')}
-          >
-            Team
-          </button>
-          <button className="logout-btn" onClick={logout}>
-            Sign Out
-          </button>
-        </nav>
       </header>
 
       <main className="app-main">
