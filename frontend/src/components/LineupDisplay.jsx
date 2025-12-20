@@ -216,17 +216,29 @@ function LineupDisplay({ shiftAssignments, lineups, setLineups }) {
       <div className="legend">
         <h4>Legend:</h4>
         <div className="legend-items">
-          <span className="match-badge best">Best</span> - Employee's best position
-          <span className="match-badge capable">Capable</span> - Employee can work this position
-          <span className="match-badge fallback">Fallback</span> - Assigned due to staffing needs
+          <div className="legend-item">
+            <span className="match-badge best">Best</span> Employee's best position
+          </div>
+          <div className="legend-item">
+            <span className="match-badge capable">Capable</span> Can work this position
+          </div>
+          <div className="legend-item">
+            <span className="match-badge fallback">Fallback</span> Assigned due to staffing
+          </div>
+          <div className="legend-item">
+            <span className="match-badge training">Training</span> In training, shadowing
+          </div>
+          <div className="legend-item">
+            <span className="match-badge extra">Extra</span> Extra support
+          </div>
         </div>
         <div className="legend-items">
-          <span className="match-badge training">Training</span> - In training, shadowing
-          <span className="match-badge extra">Extra</span> - Extra support
-        </div>
-        <div className="legend-items">
-          <span className="break-badge required">REQUIRED</span> - Break must be given
-          <span className="break-badge optional">Optional</span> - Break recommended
+          <div className="legend-item">
+            <span className="break-badge required">REQUIRED</span> Break must be given
+          </div>
+          <div className="legend-item">
+            <span className="break-badge optional">Optional</span> Break recommended
+          </div>
         </div>
       </div>
     </div>

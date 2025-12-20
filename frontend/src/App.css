@@ -1065,13 +1065,30 @@ body {
 
 .legend-items {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 0.5rem;
-  align-items: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
   font-size: 0.8rem;
   color: #666;
-  max-width: 100%;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Stack legend items vertically on mobile */
+@media (min-width: 600px) {
+  .legend-items {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .legend-item {
+    margin-right: 1rem;
+  }
 }
 
 /* ========== LINEUP PAGE LAYOUT ========== */
