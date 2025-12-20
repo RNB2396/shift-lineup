@@ -91,14 +91,15 @@ function SavedLineups({ canEdit = true }) {
       x: touch.clientX,
       y: touch.clientY,
       lineupId,
-      assignment
+      assignment,
+      target: e.target.closest('.assignment-card')
     };
 
-    // Start a timer for press-and-hold (300ms)
+    // Start a timer for press-and-hold (400ms - slightly longer to avoid accidental triggers)
     touchTimerRef.current = setTimeout(() => {
       setDraggedItem({ lineupId, assignment });
       setTouchDragging(true);
-      draggedElementRef.current = e.target.closest('.assignment-card');
+      draggedElementRef.current = touchStartRef.current?.target;
       if (draggedElementRef.current) {
         draggedElementRef.current.classList.add('touch-dragging');
       }
@@ -106,7 +107,7 @@ function SavedLineups({ canEdit = true }) {
       if (navigator.vibrate) {
         navigator.vibrate(50);
       }
-    }, 300);
+    }, 400);
   }, [canEdit]);
 
   const handleTouchMove = useCallback((e, lineupId) => {

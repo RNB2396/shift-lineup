@@ -1488,6 +1488,10 @@ body {
   cursor: grab;
   transition: all 0.2s ease;
   user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .draggable-item:active {
