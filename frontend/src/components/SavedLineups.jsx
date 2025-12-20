@@ -31,6 +31,22 @@ function SavedLineups({ canEdit = true }) {
     loadSavedLineups();
   }, []);
 
+  // Add non-passive touch move listener to allow preventDefault
+  useEffect(() => {
+    const handleGlobalTouchMove = (e) => {
+      if (touchDraggingRef.current) {
+        e.preventDefault();
+      }
+    };
+
+    // Add with passive: false to allow preventDefault
+    document.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
+
+    return () => {
+      document.removeEventListener('touchmove', handleGlobalTouchMove);
+    };
+  }, []);
+
   const loadSavedLineups = async () => {
     if (!supabase) {
       setError('Supabase not configured. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to Netlify environment variables, then redeploy.');
@@ -95,7 +111,8 @@ function SavedLineups({ canEdit = true }) {
       x: touch.clientX,
       y: touch.clientY,
       lineupId,
-      assignment
+      assignment,
+      element: targetElement
     };
 
     // Start a timer for press-and-hold (400ms)
@@ -123,6 +140,11 @@ function SavedLineups({ canEdit = true }) {
   const handleTouchMove = useCallback((e) => {
     if (!touchStartRef.current) return;
 
+    // ALWAYS prevent default if we're in drag mode to stop scrolling
+    if (touchDraggingRef.current) {
+      e.preventDefault();
+    }
+
     const touch = e.touches[0];
     const moveThreshold = 10;
     const dx = Math.abs(touch.clientX - touchStartRef.current.x);
@@ -139,7 +161,6 @@ function SavedLineups({ canEdit = true }) {
 
     // If we're dragging, find what we're over
     if (touchDraggingRef.current) {
-      e.preventDefault(); // Prevent scrolling while dragging
 
       // Find the element under the touch point
       const elementsAtPoint = document.elementsFromPoint(touch.clientX, touch.clientY);
