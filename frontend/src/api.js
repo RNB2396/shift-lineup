@@ -57,13 +57,20 @@ export const employeeApi = {
 
 // Position API
 export const positionApi = {
-  getAll: () => api.get('/positions').then(res => res.data)
+  getAll: (houseType) => {
+    const params = houseType ? { houseType } : {};
+    return api.get('/positions', { params }).then(res => res.data);
+  },
+  get: (id) => api.get(`/positions/${id}`).then(res => res.data),
+  create: (position) => api.post('/positions', position).then(res => res.data),
+  update: (id, position) => api.put(`/positions/${id}`, position).then(res => res.data),
+  delete: (id) => api.delete(`/positions/${id}`)
 };
 
 // Lineup API
 export const lineupApi = {
-  generate: (shiftAssignments) =>
-    api.post('/lineup/generate', { shiftAssignments }).then(res => res.data),
+  generate: (shiftAssignments, houseType) =>
+    api.post('/lineup/generate', { shiftAssignments, houseType }).then(res => res.data),
 
   exportExcel: async (lineups) => {
     const response = await api.post('/lineup/export', { lineups }, {

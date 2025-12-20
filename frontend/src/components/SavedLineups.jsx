@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { lineupService, supabase } from '../lib/supabase';
 import { lineupApi, employeeApi } from '../api';
 
-function SavedLineups({ canEdit = true }) {
+function SavedLineups({ canEdit = true, houseType = 'boh' }) {
   const [savedLineups, setSavedLineups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -25,7 +25,7 @@ function SavedLineups({ canEdit = true }) {
 
   useEffect(() => {
     loadSavedLineups();
-  }, []);
+  }, [houseType]);
 
   const loadSavedLineups = async () => {
     if (!supabase) {
@@ -36,7 +36,10 @@ function SavedLineups({ canEdit = true }) {
 
     try {
       setLoading(true);
-      const lineups = await lineupService.getAllLineups();
+      const allLineups = await lineupService.getAllLineups();
+
+      // Filter by house type
+      const lineups = allLineups.filter(l => (l.houseType || 'boh') === houseType);
 
       // Group by date
       const dates = [...new Set(lineups.map(l => l.date))];
@@ -44,6 +47,11 @@ function SavedLineups({ canEdit = true }) {
 
       if (dates.length > 0 && !selectedDate) {
         setSelectedDate(dates[0]);
+      } else if (dates.length > 0 && !dates.includes(selectedDate)) {
+        // If current selected date doesn't exist in filtered results, select first available
+        setSelectedDate(dates[0]);
+      } else if (dates.length === 0) {
+        setSelectedDate(null);
       }
 
       setSavedLineups(lineups);

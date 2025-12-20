@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { lineupApi } from '../api';
 import { lineupService, supabase } from '../lib/supabase';
 
-function LineupDisplay({ shiftAssignments, lineups, setLineups, closingLineup, setClosingLineup, lineupDate }) {
+function LineupDisplay({ shiftAssignments, lineups, setLineups, closingLineup, setClosingLineup, lineupDate, houseType }) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -17,7 +17,7 @@ function LineupDisplay({ shiftAssignments, lineups, setLineups, closingLineup, s
     setError(null);
 
     try {
-      const result = await lineupApi.generate(shiftAssignments);
+      const result = await lineupApi.generate(shiftAssignments, houseType);
       setLineups(result.lineups);
       if (setClosingLineup) {
         setClosingLineup(result.closingLineup);
@@ -57,9 +57,10 @@ function LineupDisplay({ shiftAssignments, lineups, setLineups, closingLineup, s
 
     setSaving(true);
     try {
-      await lineupService.saveAllLineups(lineups, lineupDate, closingLineup);
+      await lineupService.saveAllLineups(lineups, lineupDate, closingLineup, houseType);
       const dateDisplay = new Date(lineupDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-      alert(`Lineups saved for ${dateDisplay}! View them in the Saved Lineups tab.`);
+      const houseLabel = houseType === 'foh' ? 'Front of House' : 'Back of House';
+      alert(`${houseLabel} lineups saved for ${dateDisplay}! View them in the Saved Lineups tab.`);
     } catch (err) {
       console.error('Error saving lineups:', err);
       alert('Failed to save lineups: ' + err.message);

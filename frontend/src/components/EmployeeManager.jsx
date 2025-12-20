@@ -1,33 +1,38 @@
 import { useState, useEffect } from 'react';
 import { employeeApi, positionApi } from '../api';
 
-const ALL_POSITIONS = [
-  "primary",
-  "secondary1",
-  "secondary2",
-  "breading",
-  "machines",
-  "DT fries",
-  "FC fries",
-  "buns"
-];
-
-function EmployeeManager({ employees, setEmployees, onRefresh }) {
+function EmployeeManager({ employees, onRefresh, houseType }) {
   const [showForm, setShowForm] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
+  const [availablePositions, setAvailablePositions] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     isMinor: false,
     positions: [],
-    bestPositions: []
+    bestPositions: [],
+    houseType: 'boh'
   });
+
+  // Load positions from API
+  useEffect(() => {
+    const loadPositions = async () => {
+      try {
+        const positions = await positionApi.getAll();
+        setAvailablePositions(positions);
+      } catch (error) {
+        console.error('Error loading positions:', error);
+      }
+    };
+    loadPositions();
+  }, []);
 
   const resetForm = () => {
     setFormData({
       name: '',
       isMinor: false,
       positions: [],
-      bestPositions: []
+      bestPositions: [],
+      houseType: houseType || 'boh'
     });
     setEditingEmployee(null);
     setShowForm(false);
@@ -54,7 +59,8 @@ function EmployeeManager({ employees, setEmployees, onRefresh }) {
       name: employee.name,
       isMinor: employee.isMinor,
       positions: employee.positions || [],
-      bestPositions: employee.bestPositions || []
+      bestPositions: employee.bestPositions || [],
+      houseType: employee.houseType || 'boh'
     });
     setEditingEmployee(employee);
     setShowForm(true);
@@ -135,18 +141,68 @@ function EmployeeManager({ employees, setEmployees, onRefresh }) {
               </div>
 
               <div className="form-group">
+                <label>House Assignment:</label>
+                <div className="house-radio-group">
+                  <label className="radio-label">
+                    <input
+                      type="radio"
+                      name="houseType"
+                      value="foh"
+                      checked={formData.houseType === 'foh'}
+                      onChange={(e) => setFormData({ ...formData, houseType: e.target.value, positions: [], bestPositions: [] })}
+                    />
+                    Front of House
+                  </label>
+                  <label className="radio-label">
+                    <input
+                      type="radio"
+                      name="houseType"
+                      value="boh"
+                      checked={formData.houseType === 'boh'}
+                      onChange={(e) => setFormData({ ...formData, houseType: e.target.value, positions: [], bestPositions: [] })}
+                    />
+                    Back of House
+                  </label>
+                  <label className="radio-label">
+                    <input
+                      type="radio"
+                      name="houseType"
+                      value="both"
+                      checked={formData.houseType === 'both'}
+                      onChange={(e) => setFormData({ ...formData, houseType: e.target.value, positions: [], bestPositions: [] })}
+                    />
+                    Both
+                  </label>
+                </div>
+              </div>
+
+              <div className="form-group">
                 <label>Positions (click to select):</label>
                 <div className="position-grid">
-                  {ALL_POSITIONS.map(position => (
+                  {availablePositions
+                    .filter(pos => {
+                      if (formData.houseType === 'both') return true;
+                      return pos.houseType === formData.houseType;
+                    })
+                    .map(position => (
                     <div
-                      key={position}
-                      className={`position-chip ${formData.positions.includes(position) ? 'selected' : ''}`}
-                      onClick={() => togglePosition(position)}
+                      key={position.id}
+                      className={`position-chip ${formData.positions.includes(position.name) ? 'selected' : ''}`}
+                      onClick={() => togglePosition(position.name)}
                     >
-                      {position}
+                      {position.name}
+                      {formData.houseType === 'both' && (
+                        <span className="house-indicator">{position.houseType.toUpperCase()}</span>
+                      )}
                     </div>
                   ))}
                 </div>
+                {availablePositions.filter(pos => {
+                  if (formData.houseType === 'both') return true;
+                  return pos.houseType === formData.houseType;
+                }).length === 0 && (
+                  <p className="empty-positions">No positions configured for this house type. Add positions in the Positions tab first.</p>
+                )}
               </div>
 
               {formData.positions.length > 0 && (
@@ -183,32 +239,49 @@ function EmployeeManager({ employees, setEmployees, onRefresh }) {
         {employees.length === 0 ? (
           <p className="empty-state">No employees added yet. Add your first employee!</p>
         ) : (
-          employees.map(employee => {
-            const positions = Array.isArray(employee.positions) ? employee.positions : [];
-            const bestPositions = Array.isArray(employee.bestPositions) ? employee.bestPositions : [];
-            return (
-            <div key={employee.id} className="employee-card">
-              <div className="employee-info">
-                <h4>
-                  {employee.name}
-                  {employee.isMinor && <span className="minor-badge">Minor</span>}
-                </h4>
-                <div className="employee-positions">
-                  {bestPositions.map(pos => (
-                    <span key={pos} className="pos-badge best">{pos}</span>
-                  ))}
-                  {positions.filter(p => !bestPositions.includes(p)).map(pos => (
-                    <span key={pos} className="pos-badge">{pos}</span>
-                  ))}
+          employees
+            .filter(emp => {
+              const empHouseType = emp.houseType || 'boh';
+              return empHouseType === houseType || empHouseType === 'both';
+            })
+            .map(employee => {
+              const positions = Array.isArray(employee.positions) ? employee.positions : [];
+              const bestPositions = Array.isArray(employee.bestPositions) ? employee.bestPositions : [];
+              const empHouseType = employee.houseType || 'boh';
+              return (
+                <div key={employee.id} className="employee-card">
+                  <div className="employee-info">
+                    <h4>
+                      {employee.name}
+                      {employee.isMinor && <span className="minor-badge">Minor</span>}
+                      <span className={`house-badge ${empHouseType}`}>
+                        {empHouseType === 'foh' ? 'FOH' : empHouseType === 'boh' ? 'BOH' : 'Both'}
+                      </span>
+                    </h4>
+                    <div className="employee-positions">
+                      {bestPositions.map(pos => (
+                        <span key={pos} className="pos-badge best">{pos}</span>
+                      ))}
+                      {positions.filter(p => !bestPositions.includes(p)).map(pos => (
+                        <span key={pos} className="pos-badge">{pos}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="employee-actions">
+                    <button onClick={() => handleEdit(employee)} className="btn-small">Edit</button>
+                    <button onClick={() => handleDelete(employee.id)} className="btn-small btn-danger">Delete</button>
+                  </div>
                 </div>
-              </div>
-              <div className="employee-actions">
-                <button onClick={() => handleEdit(employee)} className="btn-small">Edit</button>
-                <button onClick={() => handleDelete(employee.id)} className="btn-small btn-danger">Delete</button>
-              </div>
-            </div>
-            );
-          })
+              );
+            })
+        )}
+        {employees.length > 0 && employees.filter(emp => {
+          const empHouseType = emp.houseType || 'boh';
+          return empHouseType === houseType || empHouseType === 'both';
+        }).length === 0 && (
+          <p className="empty-state">
+            No employees assigned to {houseType === 'foh' ? 'Front of House' : 'Back of House'}.
+          </p>
         )}
       </div>
     </div>

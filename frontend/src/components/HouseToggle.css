@@ -1,0 +1,49 @@
+.house-toggle {
+  display: flex;
+  background: #e2e8f0;
+  border-radius: 8px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.house-toggle .toggle-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #64748b;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.house-toggle .toggle-btn:hover {
+  color: #334155;
+}
+
+.house-toggle .toggle-btn.active {
+  background: #dc2626;
+  color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .house-toggle {
+    padding: 3px;
+    gap: 3px;
+  }
+
+  .house-toggle .toggle-btn {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .house-toggle .toggle-btn {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+}

@@ -21,7 +21,7 @@ export const setLineupStoreId = (storeId) => {
 // Helper functions for lineup operations
 export const lineupService = {
   // Save a lineup to the database
-  async saveLineup(lineup) {
+  async saveLineup(lineup, houseType = 'boh') {
     if (!supabase) throw new Error('Supabase not configured');
     if (!currentStoreId) throw new Error('No store selected');
 
@@ -34,7 +34,8 @@ export const lineupService = {
         shift_period: lineup.shiftPeriod,
         people_count: lineup.peopleCount,
         extra_people: lineup.extraPeople || 0,
-        store_id: currentStoreId
+        store_id: currentStoreId,
+        house_type: houseType
       })
       .select()
       .single();
@@ -64,12 +65,12 @@ export const lineupService = {
   },
 
   // Save multiple lineups at once (including closing lineup)
-  async saveAllLineups(lineups, date, closingLineup = null) {
+  async saveAllLineups(lineups, date, closingLineup = null, houseType = 'boh') {
     if (!supabase) throw new Error('Supabase not configured');
 
     const savedLineups = [];
     for (const lineup of lineups) {
-      const saved = await this.saveLineup({ ...lineup, date });
+      const saved = await this.saveLineup({ ...lineup, date }, houseType);
       savedLineups.push(saved);
     }
 
@@ -84,7 +85,7 @@ export const lineupService = {
         peopleCount: closingLineup.peopleCount || closingLineup.assignments.length,
         extraPeople: 0
       };
-      const savedClosing = await this.saveLineup(closingData);
+      const savedClosing = await this.saveLineup(closingData, houseType);
       savedLineups.push(savedClosing);
     }
 
@@ -220,6 +221,7 @@ export const lineupService = {
       peopleCount: dbLineup.people_count,
       extraPeople: dbLineup.extra_people,
       storeId: dbLineup.store_id,
+      houseType: dbLineup.house_type || 'boh',
       assignments: (dbLineup.lineup_assignments || [])
         .sort((a, b) => a.assignment_order - b.assignment_order)
         .map(a => ({

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-function ShiftInput({ employees = [], shiftAssignments = [], setShiftAssignments, lineupDate, setLineupDate }) {
+function ShiftInput({ employees = [], shiftAssignments = [], setShiftAssignments, lineupDate, setLineupDate, houseType }) {
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [startTime, setStartTime] = useState('14:00');
   const [endTime, setEndTime] = useState('22:00');
@@ -84,10 +84,14 @@ function ShiftInput({ employees = [], shiftAssignments = [], setShiftAssignments
     }));
   };
 
-  // Get employees not yet assigned
-  const availableEmployees = safeEmployees.filter(
-    e => !safeAssignments.some(s => s.employeeId === e.id)
-  );
+  // Get employees not yet assigned, filtered by house type
+  const availableEmployees = safeEmployees.filter(e => {
+    // First check if already assigned
+    if (safeAssignments.some(s => s.employeeId === e.id)) return false;
+    // Then filter by house type
+    const empHouseType = e.houseType || 'boh';
+    return empHouseType === houseType || empHouseType === 'both';
+  });
 
   // Sort assignments by start time
   const sortedAssignments = [...safeAssignments].sort((a, b) =>

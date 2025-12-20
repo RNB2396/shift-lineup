@@ -10,6 +10,8 @@ import LineupDisplay from './components/LineupDisplay';
 import SavedLineups from './components/SavedLineups';
 import TeamManager from './components/TeamManager';
 import AdminPanel from './components/AdminPanel';
+import PositionManager from './components/PositionManager';
+import HouseToggle from './components/HouseToggle';
 import { employeeApi } from './api';
 import './App.css';
 
@@ -40,6 +42,7 @@ function AppContent() {
   const [inviteToken, setInviteToken] = useState(null);
   const [isAdminPage, setIsAdminPage] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [houseType, setHouseType] = useState('boh');
 
   // Check if this is a password reset flow, invite acceptance, or admin page
   useEffect(() => {
@@ -175,6 +178,7 @@ function AppContent() {
       case 'lineup': return 'Lineup';
       case 'saved': return 'Saved Lineups';
       case 'employees': return `Employees (${employees.length})`;
+      case 'positions': return 'Positions';
       case 'team': return 'Team';
       default: return tab;
     }
@@ -187,6 +191,9 @@ function AppContent() {
           <h1>Shift Lineup</h1>
           {currentStore && (
             <span className="store-badge">{currentStore.name}</span>
+          )}
+          {canEditLineups && activeTab !== 'team' && (
+            <HouseToggle value={houseType} onChange={setHouseType} />
           )}
         </div>
 
@@ -231,6 +238,14 @@ function AppContent() {
                   Employees ({employees.length})
                 </button>
               )}
+              {canEditLineups && (
+                <button
+                  className={activeTab === 'positions' ? 'active' : ''}
+                  onClick={() => handleTabClick('positions')}
+                >
+                  Positions
+                </button>
+              )}
               <button
                 className={activeTab === 'team' ? 'active' : ''}
                 onClick={() => handleTabClick('team')}
@@ -268,6 +283,14 @@ function AppContent() {
               Employees ({employees.length})
             </button>
           )}
+          {canEditLineups && (
+            <button
+              className={activeTab === 'positions' ? 'active' : ''}
+              onClick={() => setActiveTab('positions')}
+            >
+              Positions
+            </button>
+          )}
           <button
             className={activeTab === 'team' ? 'active' : ''}
             onClick={() => setActiveTab('team')}
@@ -283,14 +306,16 @@ function AppContent() {
       <main className="app-main">
         {activeTab === 'team' ? (
           <TeamManager />
+        ) : activeTab === 'positions' ? (
+          <PositionManager houseType={houseType} />
         ) : activeTab === 'employees' ? (
           <EmployeeManager
             employees={employees}
-            setEmployees={setEmployees}
             onRefresh={loadEmployees}
+            houseType={houseType}
           />
         ) : activeTab === 'saved' ? (
-          <SavedLineups canEdit={canEditLineups} />
+          <SavedLineups canEdit={canEditLineups} houseType={houseType} />
         ) : (
           <div className="lineup-page">
             <ShiftInput
@@ -299,6 +324,7 @@ function AppContent() {
               setShiftAssignments={setShiftAssignments}
               lineupDate={lineupDate}
               setLineupDate={setLineupDate}
+              houseType={houseType}
             />
             <LineupDisplay
               shiftAssignments={shiftAssignments}
@@ -307,6 +333,7 @@ function AppContent() {
               closingLineup={closingLineup}
               setClosingLineup={setClosingLineup}
               lineupDate={lineupDate}
+              houseType={houseType}
             />
           </div>
         )}

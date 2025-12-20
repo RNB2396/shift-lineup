@@ -1,173 +1,187 @@
-# Multi-Store Login Implementation Plan
+# Implementation Plan: FOH/BOH Toggle & Custom Positions
 
 ## Overview
-Add per-store authentication so different Chick-fil-A locations can use the app with isolated data. Store managers are invited by you (admin), and users log in with email/password.
+
+Add Front of House (FOH) and Back of House (BOH) separation with:
+1. FOH/BOH toggle on main screens (Lineup, Employees, Saved Lineups)
+2. Employee house assignment (FOH, BOH, or Both)
+3. Custom positions management with priorities and time periods
+4. Positions are completely separate between FOH and BOH
+5. Same time periods for both (morning, lunch, midday, dinner, lateNight)
 
 ---
 
-## Database Schema Changes
+## Phase 1: Database Schema Changes
 
-### New Tables
-
-#### 1. `stores` - Store/location information
+### 1.1 Update `positions` table
 ```sql
-CREATE TABLE stores (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,                    -- e.g., "CFA #12345 - Main Street"
-  store_number TEXT UNIQUE,              -- Optional store identifier
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
-);
+ALTER TABLE positions ADD COLUMN house_type TEXT CHECK (house_type IN ('foh', 'boh')) DEFAULT 'boh';
+ALTER TABLE positions ADD COLUMN priority INTEGER DEFAULT 99;
+ALTER TABLE positions ADD COLUMN store_id UUID REFERENCES stores(id);
+ALTER TABLE positions ADD COLUMN time_periods TEXT[] DEFAULT ARRAY['all']::TEXT[];
+-- time_periods stores which shift periods this position is used in
+-- e.g., {'morning', 'lunch', 'dinner'} or {'all'}
 ```
 
-#### 2. `store_users` - Links auth users to stores with roles
+### 1.2 Update `employees` table
 ```sql
-CREATE TABLE store_users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  store_id UUID REFERENCES stores(id) ON DELETE CASCADE,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  role TEXT NOT NULL CHECK (role IN ('owner', 'manager', 'viewer')),
-  created_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(store_id, user_id)
-);
+ALTER TABLE employees ADD COLUMN house_type TEXT CHECK (house_type IN ('foh', 'boh', 'both')) DEFAULT 'boh';
 ```
 
-### Modified Tables - Add `store_id`
+### 1.3 Update `lineups` table
+```sql
+ALTER TABLE lineups ADD COLUMN house_type TEXT CHECK (house_type IN ('foh', 'boh')) DEFAULT 'boh';
+```
 
-| Table | Change |
-|-------|--------|
-| `employees` | Add `store_id UUID REFERENCES stores(id)` |
-| `shifts` | Add `store_id UUID REFERENCES stores(id)` |
-| `lineups` | Add `store_id UUID REFERENCES stores(id)` |
-
-### Row Level Security Policies
-
-All data tables will have RLS policies that:
-1. Check user is authenticated
-2. Verify user belongs to the store via `store_users`
-3. Allow appropriate CRUD based on role
+### 1.4 Update RLS policies
+- Add store_id filter to positions table RLS
+- Allow stores to manage their own positions
 
 ---
 
-## Authentication Flow
+## Phase 2: Backend Changes
 
-### For You (Admin)
-1. Create a store in the database (via Supabase dashboard or admin UI)
-2. Invite a user by email - Supabase sends them an invite
-3. User clicks link, sets password, and is associated with that store
+### 2.1 New Position API endpoints (`backend/server.js`)
+- `GET /api/positions` - Already exists, update to filter by store_id and optionally by house_type
+- `POST /api/positions` - Create new position (requires manager role)
+- `PUT /api/positions/:id` - Update position (name, priority, time_periods)
+- `DELETE /api/positions/:id` - Delete position (soft delete via is_active flag)
 
-### For Store Users
-1. Go to app → see login screen
-2. Enter email/password
-3. App fetches their store(s) from `store_users`
-4. If multiple stores, show store selector; otherwise auto-redirect
-5. All data operations filtered by current `store_id`
+### 2.2 Update Employee API
+- Update `toApiFormat()` and `toDbFormat()` to include `houseType` field
+
+### 2.3 Update Lineup Generator (`backend/services/lineupGenerator.js`)
+- Accept `houseType` parameter to filter positions
+- Use database positions instead of hardcoded `positionLayouts`
+- Dynamic priority from positions table instead of hardcoded `positionPriorities`
+
+### 2.4 Update Position Layouts (`backend/config/positionLayouts.js`)
+- Create function to build layouts from database positions
+- Accept store_id and house_type to fetch relevant positions
+- Keep fallback to default positions if store has none configured
 
 ---
 
-## Implementation Steps
+## Phase 3: Frontend Changes
 
-### Phase 1: Database Setup
-1. Create `stores` table with migration
-2. Create `store_users` table with migration
-3. Add `store_id` column to `employees`, `shifts`, `lineups`
-4. Create RLS policies for all tables
-5. Migrate existing data to a default store (if any)
+### 3.1 New Component: `PositionManager.jsx`
+Location: `frontend/src/components/PositionManager.jsx`
 
-### Phase 2: Backend Changes
-1. Add auth middleware to verify JWT tokens
-2. Extract `store_id` from authenticated user context
-3. Filter all queries by `store_id`
-4. Add endpoints:
-   - `GET /api/auth/me` - Get current user + store info
-   - `POST /api/stores/invite` - Invite user to store (admin only)
+Features:
+- List all positions for the store (grouped by FOH/BOH tabs)
+- Add new position form:
+  - Name (text)
+  - House type (FOH/BOH dropdown)
+  - Priority (number, lower = higher priority)
+  - Time periods (multi-select: morning, lunch, midday, dinner, lateNight, or "all")
+- Edit existing positions inline
+- Delete/deactivate positions
+- Drag to reorder (updates priority)
 
-### Phase 3: Frontend - Auth Components
-1. Create `AuthContext` provider for global auth state
-2. Create `Login.jsx` component (email/password form)
-3. Create `StoreSelector.jsx` for users with multiple stores
-4. Add protected route wrapper
-5. Update `App.jsx` to check auth before showing main content
+### 3.2 New Component: `HouseToggle.jsx`
+Location: `frontend/src/components/HouseToggle.jsx`
 
-### Phase 4: Frontend - Integration
-1. Pass `store_id` with all API requests (header or context)
-2. Update `supabase.js` to include auth headers
-3. Update `api.js` to include auth token
-4. Add logout functionality
-5. Show current store name in header
+Reusable toggle component for FOH/BOH switching:
+- Pill-style toggle buttons: `[Front of House] [Back of House]`
+- Props: `value`, `onChange`
+- Consistent styling across all screens
 
-### Phase 5: Admin Features (Optional Enhancement)
-1. Simple admin page to create stores
-2. Invite user form (email + store + role)
-3. View/manage store users
+### 3.3 Update `App.jsx`
+- Add "Positions" tab (visible to managers only, between Employees and Team)
+- Add FOH/BOH toggle state at app level
+- Pass `houseType` to child components
+- Place HouseToggle in header next to store badge
+
+### 3.4 Update `EmployeeManager.jsx`
+- Add house type selector in employee form (FOH, BOH, or Both radio buttons)
+- Filter displayed employees based on FOH/BOH toggle
+- Only show positions relevant to selected house type in position picker
+- Fetch positions from API instead of hardcoded list
+
+### 3.5 Update `ShiftInput.jsx`
+- Filter employees based on FOH/BOH toggle
+- Only show employees assigned to current house type (or "both")
+
+### 3.6 Update `LineupDisplay.jsx`
+- Pass house type to lineup generation API
+- Display positions for selected house type only
+
+### 3.7 Update `SavedLineups.jsx`
+- Lineups already filtered by date; also filter by house_type
+- Store house_type when saving lineups
+
+### 3.8 Update `api.js`
+- Add position API functions (getAll, create, update, delete)
+- Update employee API to handle house type
+- Update lineup generation to accept house type
+
+### 3.9 Update `lib/supabase.js`
+- Include house_type when saving/loading lineups
+- Filter lineups by house_type in queries
 
 ---
 
 ## File Changes Summary
 
-### New Files
-```
-frontend/src/
-├── context/
-│   └── AuthContext.jsx          # Auth state management
-├── components/
-│   ├── Login.jsx                # Login form
-│   ├── StoreSelector.jsx        # Multi-store picker
-│   └── ProtectedRoute.jsx       # Route guard
-└── hooks/
-    └── useAuth.js               # Auth hook
+### New Files:
+1. `frontend/src/components/PositionManager.jsx` - Position CRUD UI
+2. `frontend/src/components/HouseToggle.jsx` - Reusable FOH/BOH toggle
 
-backend/
-├── middleware/
-│   └── auth.js                  # JWT verification middleware
-└── routes/
-    └── auth.js                  # Auth-related endpoints
-```
-
-### Modified Files
-```
-frontend/src/
-├── App.jsx                      # Add auth check, show login if needed
-├── lib/supabase.js              # Add auth state listener
-└── api.js                       # Add auth header to requests
-
-backend/
-├── server.js                    # Add auth middleware, new routes
-└── config/supabase.js           # May need service role for admin ops
-```
-
-### Database Migrations
-```
-supabase/migrations/
-├── 20241219_create_stores.sql
-├── 20241219_create_store_users.sql
-├── 20241219_add_store_id_to_tables.sql
-└── 20241219_create_rls_policies.sql
-```
+### Modified Files:
+1. `backend/server.js` - Add position CRUD endpoints, update employee endpoints
+2. `backend/services/lineupGenerator.js` - Use dynamic positions, accept houseType
+3. `backend/config/positionLayouts.js` - Build layouts from DB positions
+4. `frontend/src/App.jsx` - Add Positions tab, FOH/BOH state, header toggle
+5. `frontend/src/components/EmployeeManager.jsx` - Add house type field, dynamic positions
+6. `frontend/src/components/ShiftInput.jsx` - Filter by house type
+7. `frontend/src/components/LineupDisplay.jsx` - Pass house type to API
+8. `frontend/src/components/SavedLineups.jsx` - Filter by house type
+9. `frontend/src/api.js` - Add position API calls
+10. `frontend/src/lib/supabase.js` - Include house_type in lineup queries
 
 ---
 
-## Security Considerations
+## Implementation Order
 
-1. **JWT Verification**: Backend validates Supabase JWT on every request
-2. **RLS Enforcement**: Database-level security ensures data isolation
-3. **Role-Based Access**: Owners can invite, managers can edit, viewers can only view
-4. **Store Isolation**: Users can ONLY see data for stores they belong to
-
----
-
-## Estimated Scope
-
-| Phase | Complexity | Key Work |
-|-------|------------|----------|
-| Phase 1 | Medium | 4 migrations, RLS policies |
-| Phase 2 | Medium | Auth middleware, query filtering |
-| Phase 3 | Medium | Login UI, auth context |
-| Phase 4 | Low | Wire up auth to existing components |
-| Phase 5 | Low | Optional admin UI |
+1. **Database migrations** - Schema changes first (positions, employees, lineups)
+2. **Backend position API** - CRUD endpoints for positions
+3. **Update employee API** - Add houseType field
+4. **HouseToggle component** - Create reusable toggle UI
+5. **PositionManager component** - Position management screen
+6. **Update App.jsx** - Add Positions tab and header toggle
+7. **Update EmployeeManager** - House type in employee form, dynamic positions
+8. **Update lineup generator** - Use dynamic positions with house type
+9. **Update ShiftInput/LineupDisplay** - Filter by house type
+10. **Update SavedLineups** - Include house type in saves/loads
+11. **Testing and polish** - Verify all flows work
 
 ---
 
-## Questions Resolved
-- **Registration**: Invite-only (you create stores and invite managers)
-- **Auth Method**: Email + Password
+## UI Design Notes
+
+### FOH/BOH Toggle Placement
+- In the header bar, next to the store name badge
+- Pill-style toggle: `[Front of House] [Back of House]`
+- Active side highlighted with primary color
+- Toggle is visible on: Lineup, Employees, Saved Lineups tabs
+
+### Positions Tab
+- New tab between "Employees" and "Team"
+- Two sub-tabs or sections: FOH Positions | BOH Positions
+- Each position shows: Name, Priority #, Time Periods
+- Add button at top, inline edit on click, delete button
+
+### Employee Form House Type
+- Radio buttons: ( ) Front of House  ( ) Back of House  ( ) Both
+- Default to current toggle selection
+- Position picker updates based on house type selection
+
+---
+
+## Data Migration
+
+For existing data:
+- Existing positions default to `house_type = 'boh'` (current BOH positions)
+- Existing employees default to `house_type = 'boh'`
+- Existing lineups default to `house_type = 'boh'`
+- Stores can then add FOH positions and reassign employees as needed

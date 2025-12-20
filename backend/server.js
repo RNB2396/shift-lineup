@@ -42,7 +42,7 @@ function writeEmployeesToFile(data) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 }
 
-// Convert Supabase row to API format
+// Convert Supabase employee row to API format
 function toApiFormat(row) {
   return {
     id: row.id,
@@ -50,19 +50,48 @@ function toApiFormat(row) {
     isMinor: row.is_minor,
     positions: row.positions || [],
     bestPositions: row.best_positions || [],
+    houseType: row.house_type || 'boh',
     storeId: row.store_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
 }
 
-// Convert API format to Supabase row
+// Convert API format to Supabase employee row
 function toDbFormat(data, storeId) {
   return {
     name: data.name,
     is_minor: data.isMinor || false,
     positions: data.positions || [],
     best_positions: data.bestPositions || [],
+    house_type: data.houseType || 'boh',
+    store_id: storeId
+  };
+}
+
+// Convert Supabase position row to API format
+function positionToApiFormat(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    houseType: row.house_type || 'boh',
+    priority: row.priority || 99,
+    timePeriods: row.time_periods || ['all'],
+    isActive: row.is_active !== false,
+    storeId: row.store_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
+// Convert API format to Supabase position row
+function positionToDbFormat(data, storeId) {
+  return {
+    name: data.name,
+    house_type: data.houseType || 'boh',
+    priority: data.priority || 99,
+    time_periods: data.timePeriods || ['all'],
+    is_active: data.isActive !== false,
     store_id: storeId
   };
 }
@@ -247,9 +276,152 @@ app.delete('/api/employees/:id', authMiddleware, requireStore, requireManager, a
 
 // ========== Position Routes ==========
 
-// Get all available positions (public - no auth needed)
-app.get('/api/positions', (req, res) => {
-  res.json(allPositions);
+// Get all positions for a store (filtered by house_type if provided)
+app.get('/api/positions', authMiddleware, requireStore, async (req, res) => {
+  try {
+    const { houseType } = req.query;
+
+    if (req.supabase) {
+      let query = req.supabase
+        .from('positions')
+        .select('*')
+        .eq('store_id', req.store.id)
+        .eq('is_active', true)
+        .order('priority', { ascending: true });
+
+      if (houseType && ['foh', 'boh'].includes(houseType)) {
+        query = query.eq('house_type', houseType);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      res.json(data.map(positionToApiFormat));
+    } else {
+      // Fallback for local dev - return hardcoded positions
+      res.json(allPositions.map((name, index) => ({
+        id: `local-${index}`,
+        name,
+        houseType: 'boh',
+        priority: index + 1,
+        timePeriods: ['all'],
+        isActive: true
+      })));
+    }
+  } catch (error) {
+    console.error('Error fetching positions:', error);
+    res.status(500).json({ error: 'Failed to fetch positions' });
+  }
+});
+
+// Get single position
+app.get('/api/positions/:id', authMiddleware, requireStore, async (req, res) => {
+  try {
+    if (req.supabase) {
+      const { data, error } = await req.supabase
+        .from('positions')
+        .select('*')
+        .eq('id', req.params.id)
+        .eq('store_id', req.store.id)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return res.status(404).json({ error: 'Position not found' });
+        }
+        throw error;
+      }
+      res.json(positionToApiFormat(data));
+    } else {
+      res.status(404).json({ error: 'Position not found' });
+    }
+  } catch (error) {
+    console.error('Error fetching position:', error);
+    res.status(500).json({ error: 'Failed to fetch position' });
+  }
+});
+
+// Create position
+app.post('/api/positions', authMiddleware, requireStore, requireManager, async (req, res) => {
+  try {
+    if (req.supabase) {
+      const { data, error } = await req.supabase
+        .from('positions')
+        .insert([positionToDbFormat(req.body, req.store.id)])
+        .select()
+        .single();
+
+      if (error) throw error;
+      res.status(201).json(positionToApiFormat(data));
+    } else {
+      res.status(500).json({ error: 'Database not available' });
+    }
+  } catch (error) {
+    console.error('Error creating position:', error);
+    res.status(500).json({ error: 'Failed to create position' });
+  }
+});
+
+// Update position
+app.put('/api/positions/:id', authMiddleware, requireStore, requireManager, async (req, res) => {
+  try {
+    if (req.supabase) {
+      const updateData = {
+        name: req.body.name,
+        house_type: req.body.houseType,
+        priority: req.body.priority,
+        time_periods: req.body.timePeriods,
+        is_active: req.body.isActive
+      };
+
+      // Remove undefined fields
+      Object.keys(updateData).forEach(key =>
+        updateData[key] === undefined && delete updateData[key]
+      );
+
+      const { data, error } = await req.supabase
+        .from('positions')
+        .update(updateData)
+        .eq('id', req.params.id)
+        .eq('store_id', req.store.id)
+        .select()
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return res.status(404).json({ error: 'Position not found' });
+        }
+        throw error;
+      }
+      res.json(positionToApiFormat(data));
+    } else {
+      res.status(500).json({ error: 'Database not available' });
+    }
+  } catch (error) {
+    console.error('Error updating position:', error);
+    res.status(500).json({ error: 'Failed to update position' });
+  }
+});
+
+// Delete position (soft delete)
+app.delete('/api/positions/:id', authMiddleware, requireStore, requireManager, async (req, res) => {
+  try {
+    if (req.supabase) {
+      const { error } = await req.supabase
+        .from('positions')
+        .update({ is_active: false })
+        .eq('id', req.params.id)
+        .eq('store_id', req.store.id);
+
+      if (error) throw error;
+      res.status(204).send();
+    } else {
+      res.status(500).json({ error: 'Database not available' });
+    }
+  } catch (error) {
+    console.error('Error deleting position:', error);
+    res.status(500).json({ error: 'Failed to delete position' });
+  }
 });
 
 // ========== Lineup Routes ==========
@@ -257,7 +429,7 @@ app.get('/api/positions', (req, res) => {
 // Generate lineup
 app.post('/api/lineup/generate', authMiddleware, requireStore, async (req, res) => {
   try {
-    const { shiftAssignments } = req.body;
+    const { shiftAssignments, houseType } = req.body;
 
     if (!shiftAssignments || !Array.isArray(shiftAssignments)) {
       return res.status(400).json({ error: 'shiftAssignments array is required' });
@@ -277,8 +449,16 @@ app.post('/api/lineup/generate', authMiddleware, requireStore, async (req, res) 
       employees = data.employees;
     }
 
+    // Filter employees by house type if specified
+    if (houseType && ['foh', 'boh'].includes(houseType)) {
+      employees = employees.filter(emp => {
+        const empHouseType = emp.houseType || 'boh';
+        return empHouseType === houseType || empHouseType === 'both';
+      });
+    }
+
     const result = generateLineups(shiftAssignments, employees);
-    res.json({ lineups: result.lineups, closingLineup: result.closingLineup });
+    res.json({ lineups: result.lineups, closingLineup: result.closingLineup, houseType: houseType || 'boh' });
   } catch (error) {
     console.error('Error generating lineup:', error);
     res.status(500).json({ error: 'Failed to generate lineup' });
@@ -317,13 +497,16 @@ app.listen(PORT, () => {
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`Database: ${supabase ? 'Supabase' : 'Local JSON file'}`);
   console.log('Available endpoints:');
-  console.log('  GET    /api/auth/me        - Get current user info');
-  console.log('  GET    /api/employees      - List all employees');
-  console.log('  POST   /api/employees      - Create employee');
-  console.log('  PUT    /api/employees/:id  - Update employee');
-  console.log('  DELETE /api/employees/:id  - Delete employee');
-  console.log('  GET    /api/positions      - List all positions');
+  console.log('  GET    /api/auth/me         - Get current user info');
+  console.log('  GET    /api/employees       - List all employees');
+  console.log('  POST   /api/employees       - Create employee');
+  console.log('  PUT    /api/employees/:id   - Update employee');
+  console.log('  DELETE /api/employees/:id   - Delete employee');
+  console.log('  GET    /api/positions       - List all positions');
+  console.log('  POST   /api/positions       - Create position');
+  console.log('  PUT    /api/positions/:id   - Update position');
+  console.log('  DELETE /api/positions/:id   - Delete position');
   console.log('  POST   /api/lineup/generate - Generate lineup');
-  console.log('  POST   /api/lineup/export  - Export to Excel');
-  console.log('  GET    /health             - Health check');
+  console.log('  POST   /api/lineup/export   - Export to Excel');
+  console.log('  GET    /health              - Health check');
 });
