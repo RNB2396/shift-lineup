@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { lineupService, supabase } from '../lib/supabase';
 import { lineupApi } from '../api';
 
-function SavedLineups() {
+function SavedLineups({ canEdit = true }) {
   const [savedLineups, setSavedLineups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -316,7 +316,7 @@ function SavedLineups() {
                 </option>
               ))}
             </select>
-            {selectedDate && !editMode && (
+            {selectedDate && !editMode && canEdit && (
               <>
                 <button
                   onClick={enterEditMode}
@@ -354,7 +354,7 @@ function SavedLineups() {
             )}
           </div>
 
-          {!editMode && (
+          {!editMode && canEdit && (
             <div className="drag-instructions">
               <p>Drag and drop employees to swap their positions within a time block.</p>
             </div>
@@ -455,23 +455,23 @@ function SavedLineups() {
                   <span className="count-badge">{lineup.peopleCount} people</span>
                 </div>
 
-                <div className="lineup-assignments draggable">
+                <div className={`lineup-assignments ${canEdit ? 'draggable' : ''}`}>
                   {lineup.assignments.map((assignment) => (
                     <div
                       key={assignment.id}
-                      className={`assignment-card draggable-item ${
+                      className={`assignment-card ${canEdit ? 'draggable-item' : ''} ${
                         assignment.needsBreak ? 'needs-break' : ''
                       } ${
                         dragOverItem?.assignment.id === assignment.id ? 'drag-over' : ''
                       }`}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, lineup.id, assignment)}
-                      onDragEnd={handleDragEnd}
-                      onDragOver={(e) => handleDragOver(e, lineup.id, assignment)}
-                      onDragLeave={handleDragLeave}
-                      onDrop={(e) => handleDrop(e, lineup.id, assignment)}
+                      draggable={canEdit}
+                      onDragStart={canEdit ? (e) => handleDragStart(e, lineup.id, assignment) : undefined}
+                      onDragEnd={canEdit ? handleDragEnd : undefined}
+                      onDragOver={canEdit ? (e) => handleDragOver(e, lineup.id, assignment) : undefined}
+                      onDragLeave={canEdit ? handleDragLeave : undefined}
+                      onDrop={canEdit ? (e) => handleDrop(e, lineup.id, assignment) : undefined}
                     >
-                      <span className="drag-handle">&#8942;&#8942;</span>
+                      {canEdit && <span className="drag-handle">&#8942;&#8942;</span>}
                       <span className="assignment-position">{assignment.position}</span>
                       <span className="assignment-employee">
                         {assignment.employee?.name || 'Unknown'}

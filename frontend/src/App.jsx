@@ -21,10 +21,14 @@ function AppContent() {
     currentStore,
     logout,
     canInviteUsers,
+    canEditLineups,
     userRole
   } = useAuth();
 
-  const [activeTab, setActiveTab] = useState('lineup');
+  // Viewers default to saved lineups, others to lineup
+  const [activeTab, setActiveTab] = useState(() =>
+    userRole === 'viewer' ? 'saved' : 'lineup'
+  );
   const [employees, setEmployees] = useState([]);
   const [shiftAssignments, setShiftAssignments] = useState([]);
   const [lineups, setLineups] = useState([]);
@@ -170,24 +174,28 @@ function AppContent() {
           <>
             <div className="mobile-menu-overlay" onClick={() => setMobileMenuOpen(false)} />
             <nav className="mobile-menu" onClick={(e) => e.stopPropagation()}>
-              <button
-                className={activeTab === 'lineup' ? 'active' : ''}
-                onClick={() => handleTabClick('lineup')}
-              >
-                Lineup
-              </button>
+              {canEditLineups && (
+                <button
+                  className={activeTab === 'lineup' ? 'active' : ''}
+                  onClick={() => handleTabClick('lineup')}
+                >
+                  Lineup
+                </button>
+              )}
               <button
                 className={activeTab === 'saved' ? 'active' : ''}
                 onClick={() => handleTabClick('saved')}
               >
                 Saved Lineups
               </button>
-              <button
-                className={activeTab === 'employees' ? 'active' : ''}
-                onClick={() => handleTabClick('employees')}
-              >
-                Employees ({employees.length})
-              </button>
+              {canEditLineups && (
+                <button
+                  className={activeTab === 'employees' ? 'active' : ''}
+                  onClick={() => handleTabClick('employees')}
+                >
+                  Employees ({employees.length})
+                </button>
+              )}
               {canInviteUsers && (
                 <button
                   className={activeTab === 'team' ? 'active' : ''}
@@ -205,24 +213,28 @@ function AppContent() {
 
         {/* Desktop tabs */}
         <nav className="tabs desktop-tabs">
-          <button
-            className={activeTab === 'lineup' ? 'active' : ''}
-            onClick={() => setActiveTab('lineup')}
-          >
-            Lineup
-          </button>
+          {canEditLineups && (
+            <button
+              className={activeTab === 'lineup' ? 'active' : ''}
+              onClick={() => setActiveTab('lineup')}
+            >
+              Lineup
+            </button>
+          )}
           <button
             className={activeTab === 'saved' ? 'active' : ''}
             onClick={() => setActiveTab('saved')}
           >
             Saved Lineups
           </button>
-          <button
-            className={activeTab === 'employees' ? 'active' : ''}
-            onClick={() => setActiveTab('employees')}
-          >
-            Employees ({employees.length})
-          </button>
+          {canEditLineups && (
+            <button
+              className={activeTab === 'employees' ? 'active' : ''}
+              onClick={() => setActiveTab('employees')}
+            >
+              Employees ({employees.length})
+            </button>
+          )}
           {canInviteUsers && (
             <button
               className={activeTab === 'team' ? 'active' : ''}
@@ -247,7 +259,7 @@ function AppContent() {
             onRefresh={loadEmployees}
           />
         ) : activeTab === 'saved' ? (
-          <SavedLineups />
+          <SavedLineups canEdit={canEditLineups} />
         ) : (
           <div className="lineup-page">
             <ShiftInput
