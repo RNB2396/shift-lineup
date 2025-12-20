@@ -428,8 +428,10 @@ app.delete('/api/positions/:id', authMiddleware, requireStore, requireManager, a
 
 // Generate lineup
 app.post('/api/lineup/generate', authMiddleware, requireStore, async (req, res) => {
+  console.log('Generate lineup endpoint called');
   try {
     const { shiftAssignments, houseType } = req.body;
+    console.log('Request body:', { shiftAssignmentsCount: shiftAssignments?.length, houseType });
 
     if (!shiftAssignments || !Array.isArray(shiftAssignments)) {
       return res.status(400).json({ error: 'shiftAssignments array is required' });
@@ -439,16 +441,23 @@ app.post('/api/lineup/generate', authMiddleware, requireStore, async (req, res) 
     let positions = [];
 
     if (req.supabase) {
+      console.log('Fetching from Supabase...');
       // Fetch employees
+      console.log('Fetching employees for store:', req.store.id);
       const { data: empData, error: empError } = await req.supabase
         .from('employees')
         .select('*')
         .eq('store_id', req.store.id);
 
-      if (empError) throw empError;
+      if (empError) {
+        console.error('Employee fetch error:', empError);
+        throw empError;
+      }
+      console.log('Found employees:', empData?.length);
       employees = empData.map(toApiFormat);
 
       // Fetch positions for this store and house type
+      console.log('Fetching positions for house type:', houseType);
       let positionsQuery = req.supabase
         .from('positions')
         .select('*')
@@ -460,7 +469,11 @@ app.post('/api/lineup/generate', authMiddleware, requireStore, async (req, res) 
       }
 
       const { data: posData, error: posError } = await positionsQuery.order('priority', { ascending: true });
-      if (posError) throw posError;
+      if (posError) {
+        console.error('Position fetch error:', posError);
+        throw posError;
+      }
+      console.log('Found positions:', posData?.length);
 
       // Convert to API format (snake_case to camelCase)
       positions = (posData || []).map(pos => ({
@@ -484,7 +497,9 @@ app.post('/api/lineup/generate', authMiddleware, requireStore, async (req, res) 
       });
     }
 
+    console.log('Calling generateLineups with', employees.length, 'employees and', positions.length, 'positions');
     const result = generateLineups(shiftAssignments, employees, positions);
+    console.log('Generated', result.lineups?.length, 'lineups');
     res.json({ lineups: result.lineups, closingLineup: result.closingLineup, houseType: houseType || 'boh' });
   } catch (error) {
     console.error('Error generating lineup:', error);
