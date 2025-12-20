@@ -146,8 +146,8 @@ body {
 
 /* Mobile dropdown menu */
 .mobile-menu {
-  position: absolute;
-  top: 100%;
+  position: fixed;
+  top: 60px;
   left: 0;
   right: 0;
   background: #e31837;
