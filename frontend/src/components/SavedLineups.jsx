@@ -19,11 +19,13 @@ function SavedLineups({ canEdit = true }) {
   const [newStartTime, setNewStartTime] = useState('10:00');
   const [newEndTime, setNewEndTime] = useState('18:00');
 
-  // Touch drag state
+  // Touch drag state - using refs for immediate access in event handlers
   const [touchDragging, setTouchDragging] = useState(false);
+  const touchDraggingRef = useRef(false);
   const touchTimerRef = useRef(null);
   const touchStartRef = useRef(null);
   const draggedElementRef = useRef(null);
+  const draggedItemRef = useRef(null);
 
   useEffect(() => {
     loadSavedLineups();
@@ -87,30 +89,38 @@ function SavedLineups({ canEdit = true }) {
     if (!canEdit) return;
 
     const touch = e.touches[0];
+    const targetElement = e.target.closest('.assignment-card');
+
     touchStartRef.current = {
       x: touch.clientX,
       y: touch.clientY,
       lineupId,
-      assignment,
-      target: e.target.closest('.assignment-card')
+      assignment
     };
 
-    // Start a timer for press-and-hold (400ms - slightly longer to avoid accidental triggers)
+    // Start a timer for press-and-hold (400ms)
     touchTimerRef.current = setTimeout(() => {
-      setDraggedItem({ lineupId, assignment });
+      // Use refs for immediate access
+      touchDraggingRef.current = true;
+      draggedItemRef.current = { lineupId, assignment };
+      draggedElementRef.current = targetElement;
+
+      // Also set state for re-render
       setTouchDragging(true);
-      draggedElementRef.current = touchStartRef.current?.target;
-      if (draggedElementRef.current) {
-        draggedElementRef.current.classList.add('touch-dragging');
+      setDraggedItem({ lineupId, assignment });
+
+      if (targetElement) {
+        targetElement.classList.add('touch-dragging');
       }
-      // Vibrate to indicate drag started (if supported)
+
+      // Vibrate to indicate drag started
       if (navigator.vibrate) {
         navigator.vibrate(50);
       }
     }, 400);
   }, [canEdit]);
 
-  const handleTouchMove = useCallback((e, lineupId) => {
+  const handleTouchMove = useCallback((e) => {
     if (!touchStartRef.current) return;
 
     const touch = e.touches[0];
@@ -119,7 +129,7 @@ function SavedLineups({ canEdit = true }) {
     const dy = Math.abs(touch.clientY - touchStartRef.current.y);
 
     // If moved before hold time, cancel the drag initiation
-    if (!touchDragging && (dx > moveThreshold || dy > moveThreshold)) {
+    if (!touchDraggingRef.current && (dx > moveThreshold || dy > moveThreshold)) {
       if (touchTimerRef.current) {
         clearTimeout(touchTimerRef.current);
         touchTimerRef.current = null;
@@ -127,7 +137,8 @@ function SavedLineups({ canEdit = true }) {
       return;
     }
 
-    if (touchDragging) {
+    // If we're dragging, find what we're over
+    if (touchDraggingRef.current) {
       e.preventDefault(); // Prevent scrolling while dragging
 
       // Find the element under the touch point
@@ -138,22 +149,33 @@ function SavedLineups({ canEdit = true }) {
 
       if (targetCard) {
         const targetId = targetCard.dataset.assignmentId;
-        const targetLineupId = targetCard.dataset.lineupId;
+        const targetLineupIdStr = targetCard.dataset.lineupId;
+        const sourceLineupId = draggedItemRef.current?.lineupId;
 
-        if (targetId && targetLineupId === String(lineupId)) {
+        // Check if same lineup (compare as strings)
+        if (targetId && String(sourceLineupId) === targetLineupIdStr) {
           // Find the assignment object
-          const lineup = savedLineups.find(l => l.id === lineupId);
+          const lineup = savedLineups.find(l => String(l.id) === targetLineupIdStr);
           const targetAssignment = lineup?.assignments.find(a => String(a.id) === targetId);
 
-          if (targetAssignment && draggedItem?.assignment.id !== targetAssignment.id) {
-            setDragOverItem({ lineupId, assignment: targetAssignment });
+          if (targetAssignment && draggedItemRef.current?.assignment.id !== targetAssignment.id) {
+            setDragOverItem({ lineupId: lineup.id, assignment: targetAssignment });
+
+            // Visual feedback - highlight target
+            document.querySelectorAll('.assignment-card.drag-over').forEach(el => {
+              if (el !== targetCard) el.classList.remove('drag-over');
+            });
+            targetCard.classList.add('drag-over');
           }
         }
       } else {
         setDragOverItem(null);
+        document.querySelectorAll('.assignment-card.drag-over').forEach(el => {
+          el.classList.remove('drag-over');
+        });
       }
     }
-  }, [touchDragging, draggedItem, savedLineups]);
+  }, [savedLineups]);
 
   const handleTouchEnd = useCallback(async () => {
     // Clear the hold timer
@@ -162,24 +184,28 @@ function SavedLineups({ canEdit = true }) {
       touchTimerRef.current = null;
     }
 
+    // Clean up visual states
     if (draggedElementRef.current) {
       draggedElementRef.current.classList.remove('touch-dragging');
     }
+    document.querySelectorAll('.assignment-card.drag-over').forEach(el => {
+      el.classList.remove('drag-over');
+    });
 
     // If we were dragging and have a target, perform the swap
-    if (touchDragging && draggedItem && dragOverItem) {
-      const sourceAssignment = draggedItem.assignment;
+    if (touchDraggingRef.current && draggedItemRef.current && dragOverItem) {
+      const sourceAssignment = draggedItemRef.current.assignment;
       const targetAssignment = dragOverItem.assignment;
 
       if (sourceAssignment.id !== targetAssignment.id &&
-          draggedItem.lineupId === dragOverItem.lineupId) {
+          draggedItemRef.current.lineupId === dragOverItem.lineupId) {
         try {
           setSaving(true);
           await lineupService.swapAssignments(sourceAssignment.id, targetAssignment.id);
 
           setSavedLineups(prevLineups =>
             prevLineups.map(lineup => {
-              if (lineup.id !== draggedItem.lineupId) return lineup;
+              if (lineup.id !== draggedItemRef.current.lineupId) return lineup;
 
               return {
                 ...lineup,
@@ -205,12 +231,14 @@ function SavedLineups({ canEdit = true }) {
     }
 
     // Reset all touch state
+    touchDraggingRef.current = false;
+    draggedItemRef.current = null;
     setTouchDragging(false);
     setDraggedItem(null);
     setDragOverItem(null);
     touchStartRef.current = null;
     draggedElementRef.current = null;
-  }, [touchDragging, draggedItem, dragOverItem]);
+  }, [dragOverItem]);
 
   const handleDrop = async (e, targetLineupId, targetAssignment) => {
     e.preventDefault();
@@ -727,7 +755,7 @@ function SavedLineups({ canEdit = true }) {
                       onDragLeave={canEdit ? handleDragLeave : undefined}
                       onDrop={canEdit ? (e) => handleDrop(e, lineup.id, assignment) : undefined}
                       onTouchStart={canEdit ? (e) => handleTouchStart(e, lineup.id, assignment) : undefined}
-                      onTouchMove={canEdit ? (e) => handleTouchMove(e, lineup.id) : undefined}
+                      onTouchMove={canEdit ? handleTouchMove : undefined}
                       onTouchEnd={canEdit ? handleTouchEnd : undefined}
                       onTouchCancel={canEdit ? handleTouchEnd : undefined}
                     >
