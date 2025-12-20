@@ -277,8 +277,8 @@ app.post('/api/lineup/generate', authMiddleware, requireStore, async (req, res) 
       employees = data.employees;
     }
 
-    const lineups = generateLineups(shiftAssignments, employees);
-    res.json({ lineups });
+    const result = generateLineups(shiftAssignments, employees);
+    res.json({ lineups: result.lineups, closingLineup: result.closingLineup });
   } catch (error) {
     console.error('Error generating lineup:', error);
     res.status(500).json({ error: 'Failed to generate lineup' });

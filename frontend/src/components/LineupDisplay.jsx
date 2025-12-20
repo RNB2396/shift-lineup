@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { lineupApi } from '../api';
 import { lineupService, supabase } from '../lib/supabase';
 
-function LineupDisplay({ shiftAssignments, lineups, setLineups }) {
+function LineupDisplay({ shiftAssignments, lineups, setLineups, closingLineup, setClosingLineup }) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -19,6 +19,9 @@ function LineupDisplay({ shiftAssignments, lineups, setLineups }) {
     try {
       const result = await lineupApi.generate(shiftAssignments);
       setLineups(result.lineups);
+      if (setClosingLineup) {
+        setClosingLineup(result.closingLineup);
+      }
     } catch (err) {
       console.error('Error generating lineup:', err);
       setError('Failed to generate lineup. Make sure the backend is running.');
@@ -210,6 +213,68 @@ function LineupDisplay({ shiftAssignments, lineups, setLineups }) {
               )}
             </div>
           ))}
+
+          {/* Closing Lineup Section */}
+          {closingLineup && closingLineup.assignments && closingLineup.assignments.length > 0 && (
+            <div className="lineup-card closing-lineup">
+              <div className="lineup-header">
+                <h3>Closing</h3>
+                <span className="shift-badge closing">Closing Duties</span>
+                <span className="count-badge">{closingLineup.peopleCount} people</span>
+              </div>
+
+              {/* Mobile card view */}
+              <div className="lineup-assignments">
+                {closingLineup.assignments.map((assignment, i) => (
+                  <div key={i} className="assignment-card">
+                    <span className="assignment-position">{assignment.position}</span>
+                    <span className="assignment-employee">
+                      {assignment.employee.name}
+                      {assignment.employee.isMinor && (
+                        <span className="minor-badge">Minor</span>
+                      )}
+                    </span>
+                    <div className="assignment-badges">
+                      <span className={getMatchBadgeClass(assignment.matchQuality)}>
+                        {assignment.matchQuality}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop table view */}
+              <div className="table-wrapper">
+                <table className="lineup-table">
+                  <thead>
+                    <tr>
+                      <th>Position</th>
+                      <th>Employee</th>
+                      <th>Match</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {closingLineup.assignments.map((assignment, i) => (
+                      <tr key={i}>
+                        <td className="position-cell">{assignment.position}</td>
+                        <td>
+                          {assignment.employee.name}
+                          {assignment.employee.isMinor && (
+                            <span className="minor-badge">Minor</span>
+                          )}
+                        </td>
+                        <td>
+                          <span className={getMatchBadgeClass(assignment.matchQuality)}>
+                            {assignment.matchQuality}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

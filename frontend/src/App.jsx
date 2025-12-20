@@ -28,6 +28,7 @@ function AppContent() {
   const [employees, setEmployees] = useState([]);
   const [shiftAssignments, setShiftAssignments] = useState([]);
   const [lineups, setLineups] = useState([]);
+  const [closingLineup, setClosingLineup] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isResetPassword, setIsResetPassword] = useState(false);
   const [inviteToken, setInviteToken] = useState(null);
@@ -257,6 +258,8 @@ function AppContent() {
               shiftAssignments={shiftAssignments}
               lineups={lineups}
               setLineups={setLineups}
+              closingLineup={closingLineup}
+              setClosingLineup={setClosingLineup}
             />
           </div>
         )}

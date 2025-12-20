@@ -519,7 +519,109 @@ function generateLineups(shiftAssignments, employees) {
     });
   }
 
-  return lineups;
+  // Generate closing lineup based on the last lineup period
+  const closingLineup = generateClosingLineup(lineups, enrichedAssignments);
+
+  return { lineups, closingLineup };
+}
+
+/**
+ * Generate closing lineup assignments
+ * Closing positions: breading, machines, primary, secondary, team member (shift lead), dishes (DT fries person)
+ */
+function generateClosingLineup(lineups, enrichedAssignments) {
+  if (lineups.length === 0) return null;
+
+  // Get the last lineup of the day
+  const lastLineup = lineups[lineups.length - 1];
+
+  // Find employees who are closing (working until the end)
+  const lastEndTime = lastLineup.endTime;
+  const closingEmployees = enrichedAssignments.filter(emp => emp.endTime === lastEndTime);
+
+  if (closingEmployees.length === 0) return null;
+
+  const closingAssignments = [];
+  const assignedEmployeeIds = new Set();
+
+  // Closing positions in order
+  const closingPositions = ['breading', 'machines', 'primary', 'secondary', 'team member', 'dishes'];
+
+  // Find shift lead for "team member" position
+  const shiftLead = closingEmployees.find(emp => emp.isShiftLead);
+
+  // Find who was on DT fries in the last lineup for "dishes"
+  const dtFriesAssignment = lastLineup.assignments.find(a =>
+    a.position.toLowerCase().includes('dt fries') || a.position.toLowerCase().includes('fries')
+  );
+  const dtFriesPerson = dtFriesAssignment ? dtFriesAssignment.employee : null;
+
+  for (const position of closingPositions) {
+    let assignedEmployee = null;
+    let matchQuality = 'capable';
+
+    if (position === 'team member' && shiftLead) {
+      // Shift lead does team member
+      assignedEmployee = shiftLead;
+      matchQuality = 'best';
+      assignedEmployeeIds.add(shiftLead.employeeId || shiftLead.id || shiftLead.name);
+    } else if (position === 'dishes' && dtFriesPerson) {
+      // DT fries person goes to dishes
+      const empId = dtFriesPerson.employeeId || dtFriesPerson.id || dtFriesPerson.name;
+      if (!assignedEmployeeIds.has(empId)) {
+        assignedEmployee = dtFriesPerson;
+        matchQuality = 'capable';
+        assignedEmployeeIds.add(empId);
+      }
+    }
+
+    // If not already assigned, find best available employee for this position
+    if (!assignedEmployee) {
+      let bestScore = 0;
+      let bestEmp = null;
+
+      for (const emp of closingEmployees) {
+        const empId = emp.employeeId || emp.id || emp.name;
+        if (assignedEmployeeIds.has(empId)) continue;
+
+        // Check if employee is good at this position
+        let score = 0;
+        if (emp.bestPositions && emp.bestPositions.includes(position)) {
+          score = 10;
+        } else if (emp.positions && emp.positions.includes(position)) {
+          score = 5;
+        } else {
+          // For closing, anyone can do these positions
+          score = 1;
+        }
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestEmp = emp;
+        }
+      }
+
+      if (bestEmp) {
+        assignedEmployee = bestEmp;
+        matchQuality = bestScore >= 10 ? 'best' : bestScore >= 5 ? 'capable' : 'fallback';
+        assignedEmployeeIds.add(bestEmp.employeeId || bestEmp.id || bestEmp.name);
+      }
+    }
+
+    if (assignedEmployee) {
+      closingAssignments.push({
+        employee: assignedEmployee,
+        position: position,
+        matchQuality: matchQuality
+      });
+    }
+  }
+
+  return {
+    title: 'Closing',
+    assignments: closingAssignments,
+    peopleCount: closingAssignments.length
+  };
 }
 
 module.exports = {

@@ -84,6 +84,7 @@ function AcceptInvite({ token, onComplete }) {
       }
 
       // Create new user account with a generated email (username@shiftlineup.local)
+      // Note: Supabase project must have "Confirm email" DISABLED in Auth settings
       const fakeEmail = `${trimmedUsername}@shiftlineup.local`;
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: fakeEmail,
@@ -91,11 +92,18 @@ function AcceptInvite({ token, onComplete }) {
         options: {
           data: {
             username: trimmedUsername
-          }
+          },
+          // Skip email redirect since we're using fake emails
+          emailRedirectTo: undefined
         }
       });
 
       if (signUpError) {
+        // Handle the "email not found" error from trying to send confirmation
+        if (signUpError.message?.includes('address not found') ||
+            signUpError.message?.includes('could not send')) {
+          throw new Error('Account setup failed. Please contact the administrator to disable email confirmation in Supabase settings.');
+        }
         throw signUpError;
       }
 

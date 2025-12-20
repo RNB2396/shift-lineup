@@ -110,12 +110,14 @@ function requireStore(req, res, next) {
 }
 
 /**
- * Middleware to require manager or owner role
+ * Middleware to require manager-level access or above
  * Must be used after requireStore
+ * Allows: owner, director, coordinator, manager
  */
 function requireManager(req, res, next) {
-  if (!req.store || !['owner', 'manager'].includes(req.store.role)) {
-    return res.status(403).json({ error: 'Manager or owner access required' });
+  const allowedRoles = ['owner', 'director', 'coordinator', 'manager'];
+  if (!req.store || !allowedRoles.includes(req.store.role)) {
+    return res.status(403).json({ error: 'Manager access or above required' });
   }
   next();
 }

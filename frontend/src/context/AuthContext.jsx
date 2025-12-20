@@ -153,7 +153,7 @@ export function AuthProvider({ children }) {
   };
 
   // Role hierarchy: owner > director > coordinator > manager > viewer
-  const canInviteUsers = ['owner', 'director'].includes(currentStore?.role);
+  const canInviteUsers = ['owner', 'director', 'coordinator'].includes(currentStore?.role);
   const canManageEmployees = ['owner', 'director', 'coordinator', 'manager'].includes(currentStore?.role);
   const canEditLineups = ['owner', 'director', 'coordinator', 'manager'].includes(currentStore?.role);
 
