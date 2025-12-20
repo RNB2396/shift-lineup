@@ -529,7 +529,7 @@ function generateLineups(shiftAssignments, employees) {
  * Generate closing lineup assignments
  * Closing positions: breading, machines, primary, secondary
  * People stay in their current position if it's a closing position
- * Shift lead does "team member" duties
+ * Others are listed separately as "available"
  */
 function generateClosingLineup(lineups, enrichedAssignments) {
   if (lineups.length === 0) return null;
@@ -548,9 +548,8 @@ function generateClosingLineup(lineups, enrichedAssignments) {
   if (closingEmployeeIds.size === 0) return null;
 
   const closingAssignments = [];
-
-  // Closing positions - people stay in these positions
-  const closingPositions = ['breading', 'machines', 'primary', 'secondary1', 'secondary2'];
+  const availableEmployees = [];
+  const assignedIds = new Set();
 
   // Go through the last lineup and keep closers in their positions
   for (const assignment of lastLineup.assignments) {
@@ -572,8 +571,6 @@ function generateClosingLineup(lineups, enrichedAssignments) {
       closingPosition = 'primary';
     } else if (currentPosition === 'secondary1' || currentPosition === 'secondary') {
       closingPosition = 'secondary';
-    } else if (currentPosition === 'secondary2') {
-      closingPosition = 'secondary 2';
     } else if (currentPosition.includes('lead') || assignment.employee.isShiftLead) {
       closingPosition = 'team member';
     }
@@ -584,14 +581,31 @@ function generateClosingLineup(lineups, enrichedAssignments) {
         position: closingPosition,
         matchQuality: 'best'
       });
+      assignedIds.add(empId);
+    }
+  }
+
+  // Find closers who don't have a closing task
+  for (const assignment of lastLineup.assignments) {
+    const empId = assignment.employee.employeeId || assignment.employee.id || assignment.employee.name;
+
+    if (closingEmployeeIds.has(empId) && !assignedIds.has(empId)) {
+      availableEmployees.push({
+        employee: assignment.employee,
+        position: 'available',
+        matchQuality: 'extra'
+      });
     }
   }
 
   // Sort by position priority for display
-  const positionOrder = ['breading', 'machines', 'primary', 'secondary', 'secondary 2', 'team member'];
+  const positionOrder = ['breading', 'machines', 'primary', 'secondary', 'team member'];
   closingAssignments.sort((a, b) => {
     return positionOrder.indexOf(a.position) - positionOrder.indexOf(b.position);
   });
+
+  // Add available employees at the end
+  closingAssignments.push(...availableEmployees);
 
   return {
     title: 'Closing',
