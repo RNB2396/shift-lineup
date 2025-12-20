@@ -63,8 +63,8 @@ export const lineupService = {
     return lineupData;
   },
 
-  // Save multiple lineups at once
-  async saveAllLineups(lineups, date) {
+  // Save multiple lineups at once (including closing lineup)
+  async saveAllLineups(lineups, date, closingLineup = null) {
     if (!supabase) throw new Error('Supabase not configured');
 
     const savedLineups = [];
@@ -72,6 +72,22 @@ export const lineupService = {
       const saved = await this.saveLineup({ ...lineup, date });
       savedLineups.push(saved);
     }
+
+    // Save closing lineup if provided
+    if (closingLineup && closingLineup.assignments && closingLineup.assignments.length > 0) {
+      const closingData = {
+        ...closingLineup,
+        date,
+        startTime: '22:00',
+        endTime: '22:00',
+        shiftPeriod: 'closing',
+        peopleCount: closingLineup.peopleCount || closingLineup.assignments.length,
+        extraPeople: 0
+      };
+      const savedClosing = await this.saveLineup(closingData);
+      savedLineups.push(savedClosing);
+    }
+
     return savedLineups;
   },
 

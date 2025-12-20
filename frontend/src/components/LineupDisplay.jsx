@@ -57,7 +57,7 @@ function LineupDisplay({ shiftAssignments, lineups, setLineups, closingLineup, s
 
     setSaving(true);
     try {
-      await lineupService.saveAllLineups(lineups, lineupDate);
+      await lineupService.saveAllLineups(lineups, lineupDate, closingLineup);
       const dateDisplay = new Date(lineupDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
       alert(`Lineups saved for ${dateDisplay}! View them in the Saved Lineups tab.`);
     } catch (err) {

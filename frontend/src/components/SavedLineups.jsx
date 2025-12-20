@@ -162,7 +162,8 @@ function SavedLineups() {
       lunch: 'Lunch',
       midday: 'Midday',
       dinner: 'Dinner',
-      lateNight: 'Late Night'
+      lateNight: 'Late Night',
+      closing: 'Closing'
     };
     return names[period] || period;
   };
@@ -172,6 +173,8 @@ function SavedLineups() {
       case 'best': return 'match-badge best';
       case 'capable': return 'match-badge capable';
       case 'fallback': return 'match-badge fallback';
+      case 'training': return 'match-badge training';
+      case 'extra': return 'match-badge extra';
       default: return 'match-badge';
     }
   };
@@ -230,10 +233,17 @@ function SavedLineups() {
 
           <div className="lineups-container">
             {filteredLineups.map((lineup) => (
-              <div key={lineup.id} className="lineup-card saved">
+              <div key={lineup.id} className={`lineup-card saved ${lineup.shiftPeriod === 'closing' ? 'closing-lineup' : ''}`}>
                 <div className="lineup-header">
-                  <h3>{formatTime12Hour(lineup.startTime)} - {formatTime12Hour(lineup.endTime)}</h3>
-                  <span className="shift-badge">{formatShiftPeriod(lineup.shiftPeriod)}</span>
+                  <h3>
+                    {lineup.shiftPeriod === 'closing'
+                      ? 'Closing'
+                      : `${formatTime12Hour(lineup.startTime)} - ${formatTime12Hour(lineup.endTime)}`
+                    }
+                  </h3>
+                  <span className={`shift-badge ${lineup.shiftPeriod === 'closing' ? 'closing' : ''}`}>
+                    {formatShiftPeriod(lineup.shiftPeriod)}
+                  </span>
                   <span className="count-badge">{lineup.peopleCount} people</span>
                 </div>
 
