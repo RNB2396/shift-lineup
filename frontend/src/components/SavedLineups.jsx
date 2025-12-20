@@ -545,13 +545,9 @@ function SavedLineups({ canEdit = true }) {
                   <button
                     onClick={() => setShowAddEmployee(true)}
                     className="btn-secondary add-employee-btn"
-                    disabled={getAvailableEmployees().length === 0}
                   >
-                    + Add Employee
+                    + Add Employee {allEmployees.length === 0 ? '(Loading...)' : `(${getAvailableEmployees().length} available)`}
                   </button>
-                )}
-                {getAvailableEmployees().length === 0 && !showAddEmployee && (
-                  <p className="no-employees-note">All employees are already in this shift.</p>
                 )}
               </div>
             </div>
