@@ -31,6 +31,7 @@ function AppContent() {
   const [loading, setLoading] = useState(true);
   const [isResetPassword, setIsResetPassword] = useState(false);
   const [inviteToken, setInviteToken] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Check if this is a password reset flow or invite acceptance
   useEffect(() => {
@@ -123,6 +124,21 @@ function AppContent() {
     return <div className="loading">Loading...</div>;
   }
 
+  const handleTabClick = (tab) => {
+    setActiveTab(tab);
+    setMobileMenuOpen(false);
+  };
+
+  const getTabLabel = (tab) => {
+    switch (tab) {
+      case 'lineup': return 'Lineup';
+      case 'saved': return 'Saved Lineups';
+      case 'employees': return `Employees (${employees.length})`;
+      case 'team': return 'Team';
+      default: return tab;
+    }
+  };
+
   return (
     <div className="app">
       <header className="app-header">
@@ -132,7 +148,60 @@ function AppContent() {
             <span className="store-badge">{currentStore.name}</span>
           )}
         </div>
-        <nav className="tabs">
+
+        {/* Mobile hamburger button */}
+        <button
+          className="mobile-menu-btn"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label="Toggle menu"
+        >
+          <span className="hamburger-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+          <span className="current-tab-label">{getTabLabel(activeTab)}</span>
+        </button>
+
+        {/* Mobile dropdown menu */}
+        {mobileMenuOpen && (
+          <div className="mobile-menu-overlay" onClick={() => setMobileMenuOpen(false)}>
+            <nav className="mobile-menu" onClick={(e) => e.stopPropagation()}>
+              <button
+                className={activeTab === 'lineup' ? 'active' : ''}
+                onClick={() => handleTabClick('lineup')}
+              >
+                Lineup
+              </button>
+              <button
+                className={activeTab === 'saved' ? 'active' : ''}
+                onClick={() => handleTabClick('saved')}
+              >
+                Saved Lineups
+              </button>
+              <button
+                className={activeTab === 'employees' ? 'active' : ''}
+                onClick={() => handleTabClick('employees')}
+              >
+                Employees ({employees.length})
+              </button>
+              {canInviteUsers && (
+                <button
+                  className={activeTab === 'team' ? 'active' : ''}
+                  onClick={() => handleTabClick('team')}
+                >
+                  Team
+                </button>
+              )}
+              <button className="logout-btn" onClick={logout}>
+                Sign Out
+              </button>
+            </nav>
+          </div>
+        )}
+
+        {/* Desktop tabs */}
+        <nav className="tabs desktop-tabs">
           <button
             className={activeTab === 'lineup' ? 'active' : ''}
             onClick={() => setActiveTab('lineup')}

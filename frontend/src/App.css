@@ -100,8 +100,96 @@ body {
   cursor: pointer;
 }
 
-.tabs {
+/* Mobile menu button - visible on mobile only */
+.mobile-menu-btn {
   display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255,255,255,0.1);
+  border: 2px solid white;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.hamburger-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 20px;
+}
+
+.hamburger-icon span {
+  display: block;
+  height: 2px;
+  background: white;
+  border-radius: 1px;
+}
+
+.current-tab-label {
+  white-space: nowrap;
+}
+
+/* Mobile menu overlay */
+.mobile-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 200;
+}
+
+/* Mobile dropdown menu */
+.mobile-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #e31837;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  z-index: 201;
+}
+
+.mobile-menu button {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+  color: white;
+  padding: 1rem 1.5rem;
+  text-align: left;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.mobile-menu button:last-child {
+  border-bottom: none;
+}
+
+.mobile-menu button:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.mobile-menu button.active {
+  background: rgba(255,255,255,0.2);
+  font-weight: 600;
+}
+
+.mobile-menu .logout-btn {
+  background: rgba(0,0,0,0.2);
+  margin-top: 0.5rem;
+}
+
+/* Desktop tabs - hidden on mobile */
+.tabs.desktop-tabs {
+  display: none;
   gap: 0.5rem;
   justify-content: center;
 }
@@ -1004,6 +1092,19 @@ body {
    TABLET STYLES (768px+)
    ======================================== */
 @media (min-width: 768px) {
+  /* Hide mobile menu, show desktop tabs */
+  .mobile-menu-btn {
+    display: none;
+  }
+
+  .mobile-menu-overlay {
+    display: none;
+  }
+
+  .tabs.desktop-tabs {
+    display: flex;
+  }
+
   .app-header {
     flex-direction: row;
     justify-content: space-between;
