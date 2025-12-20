@@ -165,7 +165,8 @@ function AppContent() {
 
         {/* Mobile dropdown menu */}
         {mobileMenuOpen && (
-          <div className="mobile-menu-overlay" onClick={() => setMobileMenuOpen(false)}>
+          <>
+            <div className="mobile-menu-overlay" onClick={() => setMobileMenuOpen(false)} />
             <nav className="mobile-menu" onClick={(e) => e.stopPropagation()}>
               <button
                 className={activeTab === 'lineup' ? 'active' : ''}
@@ -197,7 +198,7 @@ function AppContent() {
                 Sign Out
               </button>
             </nav>
-          </div>
+          </>
         )}
 
         {/* Desktop tabs */}
