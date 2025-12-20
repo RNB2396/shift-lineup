@@ -519,7 +519,7 @@ app.get('/health', (req, res) => {
 
 // ========== Start Server ==========
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Shift Lineup API running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`Database: ${supabase ? 'Supabase' : 'Local JSON file'}`);
