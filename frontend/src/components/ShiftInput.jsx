@@ -194,65 +194,67 @@ function ShiftInput({ employees = [], shiftAssignments = [], setShiftAssignments
             })}
 
             {/* Desktop table view */}
-            <table className="shift-table">
-              <thead>
-                <tr>
-                  <th>Employee</th>
-                  <th>Lead</th>
-                  <th>Start Time</th>
-                  <th>End Time</th>
-                  <th>Hours</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedAssignments.map(shift => {
-                  const startMins = parseInt(shift.startTime.split(':')[0]) * 60 + parseInt(shift.startTime.split(':')[1]);
-                  const endMins = parseInt(shift.endTime.split(':')[0]) * 60 + parseInt(shift.endTime.split(':')[1]);
-                  const hours = ((endMins - startMins) / 60).toFixed(1);
+            <div className="table-wrapper">
+              <table className="shift-table">
+                <thead>
+                  <tr>
+                    <th>Employee</th>
+                    <th>Lead</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Hours</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedAssignments.map(shift => {
+                    const startMins = parseInt(shift.startTime.split(':')[0]) * 60 + parseInt(shift.startTime.split(':')[1]);
+                    const endMins = parseInt(shift.endTime.split(':')[0]) * 60 + parseInt(shift.endTime.split(':')[1]);
+                    const hours = ((endMins - startMins) / 60).toFixed(1);
 
-                  return (
-                    <tr key={shift.employeeId} className={shift.isShiftLead ? 'lead-row' : ''}>
-                      <td>
-                        {shift.name}
-                        {shift.isMinor && <span className="minor-badge">Minor</span>}
-                      </td>
-                      <td>
-                        <input
-                          type="checkbox"
-                          checked={shift.isShiftLead || false}
-                          onChange={() => handleToggleLead(shift.employeeId)}
-                          title="Mark as shift lead"
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="time"
-                          value={shift.startTime}
-                          onChange={(e) => handleUpdateTime(shift.employeeId, 'startTime', e.target.value)}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="time"
-                          value={shift.endTime}
-                          onChange={(e) => handleUpdateTime(shift.employeeId, 'endTime', e.target.value)}
-                        />
-                      </td>
-                      <td>{hours} hrs</td>
-                      <td>
-                        <button
-                          onClick={() => handleRemoveShift(shift.employeeId)}
-                          className="btn-small btn-danger"
-                        >
-                          Remove
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                    return (
+                      <tr key={shift.employeeId} className={shift.isShiftLead ? 'lead-row' : ''}>
+                        <td>
+                          {shift.name}
+                          {shift.isMinor && <span className="minor-badge">Minor</span>}
+                        </td>
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={shift.isShiftLead || false}
+                            onChange={() => handleToggleLead(shift.employeeId)}
+                            title="Mark as shift lead"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="time"
+                            value={shift.startTime}
+                            onChange={(e) => handleUpdateTime(shift.employeeId, 'startTime', e.target.value)}
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="time"
+                            value={shift.endTime}
+                            onChange={(e) => handleUpdateTime(shift.employeeId, 'endTime', e.target.value)}
+                          />
+                        </td>
+                        <td>{hours} hrs</td>
+                        <td>
+                          <button
+                            onClick={() => handleRemoveShift(shift.employeeId)}
+                            className="btn-small btn-danger"
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </>
         )}
       </div>

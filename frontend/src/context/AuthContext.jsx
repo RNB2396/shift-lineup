@@ -152,6 +152,11 @@ export function AuthProvider({ children }) {
     return session?.access_token || null;
   };
 
+  // Role hierarchy: owner > director > coordinator > manager > viewer
+  const canInviteUsers = ['owner', 'director'].includes(currentStore?.role);
+  const canManageEmployees = ['owner', 'director', 'coordinator', 'manager'].includes(currentStore?.role);
+  const canEditLineups = ['owner', 'director', 'coordinator', 'manager'].includes(currentStore?.role);
+
   const value = {
     user,
     stores,
@@ -164,8 +169,13 @@ export function AuthProvider({ children }) {
     getAccessToken,
     isAuthenticated: !!user,
     hasStore: !!currentStore,
-    isManager: currentStore?.role === 'manager' || currentStore?.role === 'owner',
-    isOwner: currentStore?.role === 'owner'
+    isManager: canManageEmployees,
+    isOwner: currentStore?.role === 'owner',
+    isDirector: currentStore?.role === 'director',
+    canInviteUsers,
+    canManageEmployees,
+    canEditLineups,
+    userRole: currentStore?.role
   };
 
   return (

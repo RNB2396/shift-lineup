@@ -4,50 +4,28 @@ import { supabase } from '../lib/supabase';
 import './Login.css';
 
 function Login() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setMessage('');
     setIsLoading(true);
 
     try {
+      // Convert username to email format for Supabase auth
+      const trimmedUsername = username.trim().toLowerCase();
+      const email = trimmedUsername.includes('@')
+        ? trimmedUsername
+        : `${trimmedUsername}@shiftlineup.local`;
+
       await login(email, password);
     } catch (err) {
-      setError(err.message || 'Login failed. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleForgotPassword = async (e) => {
-    e.preventDefault();
-    if (!email) {
-      setError('Please enter your email address');
-      return;
-    }
-
-    setError('');
-    setMessage('');
-    setIsLoading(true);
-
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-      if (error) throw error;
-      setMessage('Check your email for the password reset link!');
-      setShowForgotPassword(false);
-    } catch (err) {
-      setError(err.message || 'Failed to send reset email');
+      setError('Invalid username or password');
     } finally {
       setIsLoading(false);
     }
@@ -61,83 +39,43 @@ function Login() {
           <p>Sign in to manage your store</p>
         </div>
 
-        {showForgotPassword ? (
-          <form onSubmit={handleForgotPassword} className="login-form">
-            {error && <div className="login-error">{error}</div>}
-            {message && <div className="login-success">{message}</div>}
+        <form onSubmit={handleSubmit} className="login-form">
+          {error && <div className="login-error">{error}</div>}
 
-            <div className="form-group">
-              <label htmlFor="email">Email</label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                required
-                disabled={isLoading}
-              />
-            </div>
+          <div className="form-group">
+            <label htmlFor="username">Username</label>
+            <input
+              id="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="your_username"
+              required
+              disabled={isLoading}
+              autoComplete="username"
+            />
+          </div>
 
-            <button type="submit" className="login-button" disabled={isLoading}>
-              {isLoading ? 'Sending...' : 'Send Reset Link'}
-            </button>
+          <div className="form-group">
+            <label htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Your password"
+              required
+              disabled={isLoading}
+            />
+          </div>
 
-            <button
-              type="button"
-              className="login-link-button"
-              onClick={() => setShowForgotPassword(false)}
-            >
-              Back to Sign In
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleSubmit} className="login-form">
-            {error && <div className="login-error">{error}</div>}
-            {message && <div className="login-success">{message}</div>}
-
-            <div className="form-group">
-              <label htmlFor="email">Email</label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                required
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="password">Password</label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Your password"
-                required
-                disabled={isLoading}
-              />
-            </div>
-
-            <button type="submit" className="login-button" disabled={isLoading}>
-              {isLoading ? 'Signing in...' : 'Sign In'}
-            </button>
-
-            <button
-              type="button"
-              className="login-link-button"
-              onClick={() => setShowForgotPassword(true)}
-            >
-              Forgot password?
-            </button>
-          </form>
-        )}
+          <button type="submit" className="login-button" disabled={isLoading}>
+            {isLoading ? 'Signing in...' : 'Sign In'}
+          </button>
+        </form>
 
         <div className="login-footer">
-          <p>Contact your administrator if you need an account.</p>
+          <p>Need an account? Ask your manager for an invite link.</p>
         </div>
       </div>
     </div>

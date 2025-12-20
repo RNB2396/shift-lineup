@@ -163,41 +163,43 @@ function LineupDisplay({ shiftAssignments, lineups, setLineups }) {
               </div>
 
               {/* Desktop table view */}
-              <table className="lineup-table">
-                <thead>
-                  <tr>
-                    <th>Position</th>
-                    <th>Employee</th>
-                    <th>Match</th>
-                    <th>Break</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {lineup.assignments.map((assignment, i) => (
-                    <tr key={i} className={assignment.needsBreak ? 'needs-break' : ''}>
-                      <td className="position-cell">{assignment.position}</td>
-                      <td>
-                        {assignment.employee.name}
-                        {assignment.employee.isMinor && (
-                          <span className="minor-badge">Minor</span>
-                        )}
-                      </td>
-                      <td>
-                        <span className={getMatchBadgeClass(assignment.matchQuality)}>
-                          {assignment.matchQuality}
-                        </span>
-                      </td>
-                      <td>
-                        {assignment.needsBreak && (
-                          <span className={`break-badge ${assignment.breakType}`}>
-                            {assignment.breakType === 'required' ? 'REQUIRED' : 'Optional'}
-                          </span>
-                        )}
-                      </td>
+              <div className="table-wrapper">
+                <table className="lineup-table">
+                  <thead>
+                    <tr>
+                      <th>Position</th>
+                      <th>Employee</th>
+                      <th>Match</th>
+                      <th>Break</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {lineup.assignments.map((assignment, i) => (
+                      <tr key={i} className={assignment.needsBreak ? 'needs-break' : ''}>
+                        <td className="position-cell">{assignment.position}</td>
+                        <td>
+                          {assignment.employee.name}
+                          {assignment.employee.isMinor && (
+                            <span className="minor-badge">Minor</span>
+                          )}
+                        </td>
+                        <td>
+                          <span className={getMatchBadgeClass(assignment.matchQuality)}>
+                            {assignment.matchQuality}
+                          </span>
+                        </td>
+                        <td>
+                          {assignment.needsBreak && (
+                            <span className={`break-badge ${assignment.breakType}`}>
+                              {assignment.breakType === 'required' ? 'REQUIRED' : 'Optional'}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
               {lineup.extraPeople > 0 && (
                 <div className="extra-info">

@@ -3,10 +3,12 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './components/Login';
 import StoreSelector from './components/StoreSelector';
 import ResetPassword from './components/ResetPassword';
+import AcceptInvite from './components/AcceptInvite';
 import EmployeeManager from './components/EmployeeManager';
 import ShiftInput from './components/ShiftInput';
 import LineupDisplay from './components/LineupDisplay';
 import SavedLineups from './components/SavedLineups';
+import TeamManager from './components/TeamManager';
 import { employeeApi } from './api';
 import './App.css';
 
@@ -17,7 +19,9 @@ function AppContent() {
     loading: authLoading,
     stores,
     currentStore,
-    logout
+    logout,
+    canInviteUsers,
+    userRole
   } = useAuth();
 
   const [activeTab, setActiveTab] = useState('lineup');
@@ -26,12 +30,20 @@ function AppContent() {
   const [lineups, setLineups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isResetPassword, setIsResetPassword] = useState(false);
+  const [inviteToken, setInviteToken] = useState(null);
 
-  // Check if this is a password reset flow
+  // Check if this is a password reset flow or invite acceptance
   useEffect(() => {
     const hash = window.location.hash;
     if (hash && hash.includes('type=recovery')) {
       setIsResetPassword(true);
+    }
+
+    // Check for invite token in URL
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    if (window.location.pathname === '/accept-invite' && token) {
+      setInviteToken(token);
     }
   }, []);
 
@@ -58,6 +70,20 @@ function AppContent() {
   // Show loading while checking auth
   if (authLoading) {
     return <div className="loading">Loading...</div>;
+  }
+
+  // Show accept invite page if token present
+  if (inviteToken) {
+    return (
+      <AcceptInvite
+        token={inviteToken}
+        onComplete={() => {
+          setInviteToken(null);
+          window.history.replaceState(null, '', '/');
+          window.location.reload();
+        }}
+      />
+    );
   }
 
   // Show reset password page if in recovery flow
@@ -125,6 +151,14 @@ function AppContent() {
           >
             Employees ({employees.length})
           </button>
+          {canInviteUsers && (
+            <button
+              className={activeTab === 'team' ? 'active' : ''}
+              onClick={() => setActiveTab('team')}
+            >
+              Team
+            </button>
+          )}
           <button className="logout-btn" onClick={logout}>
             Sign Out
           </button>
@@ -132,7 +166,9 @@ function AppContent() {
       </header>
 
       <main className="app-main">
-        {activeTab === 'employees' ? (
+        {activeTab === 'team' ? (
+          <TeamManager />
+        ) : activeTab === 'employees' ? (
           <EmployeeManager
             employees={employees}
             setEmployees={setEmployees}
