@@ -49,13 +49,15 @@ const positionLayouts = {
     }
   },
   lateNight: {
-    // 8:00 PM - 10:00 PM
+    // 8:00 PM - 10:00 PM (closing at 10)
     startTime: "20:00",
     endTime: "22:00",
     layouts: {
-      5: ["primary", "secondary1", "breading", "machines", "precloser/breaks"],
-      6: ["primary", "secondary1", "breading", "machines", "precloser/breaks", "secondary2"],
-      7: ["primary", "secondary1", "breading", "machines", "precloser/breaks", "precloser/breaks", "secondary2"]
+      4: ["primary", "secondary1", "breading", "machines"],
+      5: ["primary", "secondary1", "secondary2", "breading", "machines"],
+      6: ["primary", "secondary1", "secondary2", "breading", "machines", "DT fries"],
+      7: ["primary", "secondary1", "secondary2", "breading", "machines", "DT fries", "buns"],
+      8: ["primary", "secondary1", "secondary2", "breading", "machines", "DT fries", "buns", "FC fries"]
     }
   }
 };
