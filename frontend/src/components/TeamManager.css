@@ -166,3 +166,30 @@
 .invite-link-box button {
   flex-shrink: 0;
 }
+
+.role-select {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  background: white;
+  color: #333;
+  cursor: pointer;
+  min-width: 120px;
+}
+
+.role-select:hover {
+  border-color: #aaa;
+}
+
+.role-select:focus {
+  outline: none;
+  border-color: #e31837;
+  box-shadow: 0 0 0 2px rgba(227, 24, 55, 0.1);
+}
+
+.role-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

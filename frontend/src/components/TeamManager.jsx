@@ -15,8 +15,8 @@ function TeamManager() {
   const [inviteSuccess, setInviteSuccess] = useState('');
   const [sending, setSending] = useState(false);
   const [removing, setRemoving] = useState(null);
+  const [changingRole, setChangingRole] = useState(null);
   const [inviteLink, setInviteLink] = useState('');
-  const [generatedToken, setGeneratedToken] = useState('');
 
   const roleLabels = {
     owner: 'Owner',
@@ -184,6 +184,55 @@ function TeamManager() {
     return true;
   };
 
+  // Check if current user can change a member's role
+  const canChangeRole = (member) => {
+    // Can't change your own role
+    if (member.user_id === user?.id) return false;
+    // Can't change owner's role
+    if (member.role === 'owner') return false;
+    // Only owners and directors can change roles
+    if (userRole !== 'owner' && userRole !== 'director') return false;
+    // Directors can't change other directors' roles
+    if (userRole === 'director' && member.role === 'director') return false;
+    return true;
+  };
+
+  // Get assignable roles based on current user's role
+  const getAssignableRoles = (member) => {
+    if (userRole === 'owner') {
+      // Owners can assign any role except owner
+      return ['director', 'coordinator', 'manager', 'viewer'];
+    } else if (userRole === 'director') {
+      // Directors can only assign coordinator, manager, viewer
+      return ['coordinator', 'manager', 'viewer'];
+    }
+    return [];
+  };
+
+  const handleChangeRole = async (member, newRole) => {
+    if (newRole === member.role) return;
+
+    setChangingRole(member.id);
+    try {
+      const { error } = await supabase
+        .from('store_users')
+        .update({ role: newRole })
+        .eq('id', member.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setTeamMembers(teamMembers.map(m =>
+        m.id === member.id ? { ...m, role: newRole } : m
+      ));
+    } catch (err) {
+      console.error('Error changing role:', err);
+      alert('Failed to change role: ' + (err.message || 'Unknown error'));
+    } finally {
+      setChangingRole(null);
+    }
+  };
+
   const formatDate = (dateStr) => {
     return new Date(dateStr).toLocaleDateString('en-US', {
       month: 'short',
@@ -219,9 +268,24 @@ function TeamManager() {
             <div key={member.id} className="team-card">
               <div className="team-member-info">
                 <span className="member-name">{member.displayName}</span>
-                <span className={`role-badge ${member.role}`}>
-                  {roleLabels[member.role]}
-                </span>
+                {canChangeRole(member) ? (
+                  <select
+                    className="role-select"
+                    value={member.role}
+                    onChange={(e) => handleChangeRole(member, e.target.value)}
+                    disabled={changingRole === member.id}
+                  >
+                    {getAssignableRoles(member).map(role => (
+                      <option key={role} value={role}>
+                        {roleLabels[role]}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className={`role-badge ${member.role}`}>
+                    {roleLabels[member.role]}
+                  </span>
+                )}
                 {member.user_id === user?.id && (
                   <span className="you-badge">You</span>
                 )}
