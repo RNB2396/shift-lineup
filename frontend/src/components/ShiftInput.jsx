@@ -5,6 +5,8 @@ function ShiftInput({ employees = [], shiftAssignments = [], setShiftAssignments
   const [startTime, setStartTime] = useState('14:00');
   const [endTime, setEndTime] = useState('22:00');
   const [isShiftLead, setIsShiftLead] = useState(false);
+  const [isBooster, setIsBooster] = useState(false);
+  const [isInTraining, setIsInTraining] = useState(false);
 
   // Ensure we have arrays
   const safeEmployees = Array.isArray(employees) ? employees : [];
@@ -25,14 +27,8 @@ function ShiftInput({ employees = [], shiftAssignments = [], setShiftAssignments
       return;
     }
 
-    // If marking as shift lead, remove lead status from any existing assignment
-    let updatedAssignments = safeAssignments;
-    if (isShiftLead) {
-      updatedAssignments = safeAssignments.map(s => ({ ...s, isShiftLead: false }));
-    }
-
     setShiftAssignments([
-      ...updatedAssignments,
+      ...safeAssignments,
       {
         employeeId: employee.id,
         name: employee.name,
@@ -41,12 +37,16 @@ function ShiftInput({ employees = [], shiftAssignments = [], setShiftAssignments
         bestPositions: employee.bestPositions,
         startTime,
         endTime,
-        isShiftLead
+        isShiftLead,
+        isBooster,
+        isInTraining
       }
     ]);
 
     setSelectedEmployee('');
     setIsShiftLead(false);
+    setIsBooster(false);
+    setIsInTraining(false);
   };
 
   const handleRemoveShift = (employeeId) => {
@@ -59,19 +59,12 @@ function ShiftInput({ employees = [], shiftAssignments = [], setShiftAssignments
     ));
   };
 
-  const handleToggleLead = (employeeId) => {
+  const handleToggleRole = (employeeId, role) => {
     setShiftAssignments(safeAssignments.map(s => {
       if (s.employeeId === employeeId) {
-        // Toggle this employee's lead status
-        return { ...s, isShiftLead: !s.isShiftLead };
-      } else {
-        // Remove lead status from others if we're setting a new lead
-        const targetShift = safeAssignments.find(sh => sh.employeeId === employeeId);
-        if (!targetShift?.isShiftLead) {
-          return { ...s, isShiftLead: false };
-        }
-        return s;
+        return { ...s, [role]: !s[role] };
       }
+      return s;
     }));
   };
 
@@ -121,14 +114,32 @@ function ShiftInput({ employees = [], shiftAssignments = [], setShiftAssignments
           </label>
         </div>
 
-        <label className="lead-checkbox">
-          <input
-            type="checkbox"
-            checked={isShiftLead}
-            onChange={(e) => setIsShiftLead(e.target.checked)}
-          />
-          Shift Lead
-        </label>
+        <div className="role-checkboxes">
+          <label className="role-checkbox">
+            <input
+              type="checkbox"
+              checked={isShiftLead}
+              onChange={(e) => setIsShiftLead(e.target.checked)}
+            />
+            Shift Lead
+          </label>
+          <label className="role-checkbox">
+            <input
+              type="checkbox"
+              checked={isBooster}
+              onChange={(e) => setIsBooster(e.target.checked)}
+            />
+            Booster
+          </label>
+          <label className="role-checkbox">
+            <input
+              type="checkbox"
+              checked={isInTraining}
+              onChange={(e) => setIsInTraining(e.target.checked)}
+            />
+            In Training
+          </label>
+        </div>
 
         <button onClick={handleAddShift} className="btn-primary">
           Add to Shift
@@ -147,7 +158,7 @@ function ShiftInput({ employees = [], shiftAssignments = [], setShiftAssignments
               const hours = ((endMins - startMins) / 60).toFixed(1);
 
               return (
-                <div key={shift.employeeId} className={`shift-card ${shift.isShiftLead ? 'lead-row' : ''}`}>
+                <div key={shift.employeeId} className={`shift-card ${shift.isShiftLead ? 'lead-row' : ''} ${shift.isBooster ? 'booster-row' : ''} ${shift.isInTraining ? 'training-row' : ''}`}>
                   <div className="shift-card-header">
                     <span className="shift-card-name">
                       {shift.name}
@@ -179,14 +190,32 @@ function ShiftInput({ employees = [], shiftAssignments = [], setShiftAssignments
                     </label>
                   </div>
                   <div className="shift-card-footer">
-                    <label className="shift-card-lead">
-                      <input
-                        type="checkbox"
-                        checked={shift.isShiftLead || false}
-                        onChange={() => handleToggleLead(shift.employeeId)}
-                      />
-                      Shift Lead
-                    </label>
+                    <div className="shift-card-roles">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={shift.isShiftLead || false}
+                          onChange={() => handleToggleRole(shift.employeeId, 'isShiftLead')}
+                        />
+                        Lead
+                      </label>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={shift.isBooster || false}
+                          onChange={() => handleToggleRole(shift.employeeId, 'isBooster')}
+                        />
+                        Booster
+                      </label>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={shift.isInTraining || false}
+                          onChange={() => handleToggleRole(shift.employeeId, 'isInTraining')}
+                        />
+                        Training
+                      </label>
+                    </div>
                     <span className="shift-card-hours">{hours} hrs</span>
                   </div>
                 </div>
@@ -200,8 +229,10 @@ function ShiftInput({ employees = [], shiftAssignments = [], setShiftAssignments
                   <tr>
                     <th>Employee</th>
                     <th>Lead</th>
-                    <th>Start Time</th>
-                    <th>End Time</th>
+                    <th>Booster</th>
+                    <th>Training</th>
+                    <th>Start</th>
+                    <th>End</th>
                     <th>Hours</th>
                     <th>Actions</th>
                   </tr>
@@ -213,7 +244,7 @@ function ShiftInput({ employees = [], shiftAssignments = [], setShiftAssignments
                     const hours = ((endMins - startMins) / 60).toFixed(1);
 
                     return (
-                      <tr key={shift.employeeId} className={shift.isShiftLead ? 'lead-row' : ''}>
+                      <tr key={shift.employeeId} className={`${shift.isShiftLead ? 'lead-row' : ''} ${shift.isBooster ? 'booster-row' : ''} ${shift.isInTraining ? 'training-row' : ''}`}>
                         <td>
                           {shift.name}
                           {shift.isMinor && <span className="minor-badge">Minor</span>}
@@ -222,8 +253,24 @@ function ShiftInput({ employees = [], shiftAssignments = [], setShiftAssignments
                           <input
                             type="checkbox"
                             checked={shift.isShiftLead || false}
-                            onChange={() => handleToggleLead(shift.employeeId)}
+                            onChange={() => handleToggleRole(shift.employeeId, 'isShiftLead')}
                             title="Mark as shift lead"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={shift.isBooster || false}
+                            onChange={() => handleToggleRole(shift.employeeId, 'isBooster')}
+                            title="Mark as booster"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={shift.isInTraining || false}
+                            onChange={() => handleToggleRole(shift.employeeId, 'isInTraining')}
+                            title="Mark as in training"
                           />
                         </td>
                         <td>

@@ -70,6 +70,8 @@ function LineupDisplay({ shiftAssignments, lineups, setLineups }) {
       case 'best': return 'match-badge best';
       case 'capable': return 'match-badge capable';
       case 'fallback': return 'match-badge fallback';
+      case 'training': return 'match-badge training';
+      case 'extra': return 'match-badge extra';
       default: return 'match-badge';
     }
   };
@@ -217,6 +219,10 @@ function LineupDisplay({ shiftAssignments, lineups, setLineups }) {
           <span className="match-badge best">Best</span> - Employee's best position
           <span className="match-badge capable">Capable</span> - Employee can work this position
           <span className="match-badge fallback">Fallback</span> - Assigned due to staffing needs
+        </div>
+        <div className="legend-items">
+          <span className="match-badge training">Training</span> - In training, shadowing
+          <span className="match-badge extra">Extra</span> - Extra support
         </div>
         <div className="legend-items">
           <span className="break-badge required">REQUIRED</span> - Break must be given

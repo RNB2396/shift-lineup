@@ -520,6 +520,38 @@ body {
   accent-color: #e31837;
 }
 
+.role-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.role-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  color: #333;
+  padding: 0.5rem 0.75rem;
+  background: #f0f0f0;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  font-size: 0.875rem;
+}
+
+.role-checkbox:has(input:checked) {
+  background: #fff3cd;
+  border-color: #ffc107;
+}
+
+.role-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #e31837;
+}
+
 /* Mobile-friendly shift cards */
 .shift-list {
   display: flex;
@@ -540,6 +572,45 @@ body {
 .shift-card.lead-row {
   background: #fff3cd;
   border-color: #ffc107;
+}
+
+.shift-card.booster-row {
+  background: #d4edda;
+  border-color: #28a745;
+}
+
+.shift-card.training-row {
+  background: #cce5ff;
+  border-color: #007bff;
+}
+
+/* Multiple roles - combined styling */
+.shift-card.lead-row.booster-row {
+  background: linear-gradient(135deg, #fff3cd 50%, #d4edda 50%);
+}
+
+.shift-card.lead-row.training-row {
+  background: linear-gradient(135deg, #fff3cd 50%, #cce5ff 50%);
+}
+
+.shift-card-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.shift-card-roles label {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.shift-card-roles input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #e31837;
 }
 
 .shift-card-header {
@@ -663,6 +734,14 @@ body {
 
 .shift-table .lead-row {
   background: #fff3cd;
+}
+
+.shift-table .booster-row {
+  background: #d4edda;
+}
+
+.shift-table .training-row {
+  background: #cce5ff;
 }
 
 .shift-summary {
@@ -843,6 +922,16 @@ body {
 
 .match-badge.fallback {
   background: #dc3545;
+  color: white;
+}
+
+.match-badge.training {
+  background: #007bff;
+  color: white;
+}
+
+.match-badge.extra {
+  background: #6c757d;
   color: white;
 }
 

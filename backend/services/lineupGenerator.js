@@ -203,6 +203,7 @@ function scoreEmployeeForPosition(employee, position, boostChecklistPositions = 
  * People with checklist skill get boosted priority for buns, machines, secondary2
  * Lead is marked per-shift (isShiftLead flag) so leaders can work general positions some days
  * Leaders float and can place themselves anywhere - most important positions filled first with "best" employees
+ * Boosters float to help everyone, trainees shadow and aren't locked to positions
  * previousAssignments helps minimize position changes between periods
  */
 function assignEmployeesToPositions(workingEmployees, positions, startTime, previousAssignments = {}) {
@@ -221,21 +222,63 @@ function assignEmployeesToPositions(workingEmployees, positions, startTime, prev
     return parts.length > 0 ? parts.join('/') : pos;
   });
 
-  // Handle shift lead first - uses isShiftLead flag set per shift, not position skill
-  let leadAssigned = false;
-  const leadIndex = unassigned.findIndex(emp => emp.isShiftLead === true);
+  // Handle shift leads first - uses isShiftLead flag set per shift
+  // Multiple shift leads are allowed
+  const leadIndices = [];
+  for (let i = unassigned.length - 1; i >= 0; i--) {
+    if (unassigned[i].isShiftLead === true) {
+      leadIndices.push(i);
+    }
+  }
 
-  if (leadIndex !== -1) {
+  // Process in reverse order to maintain correct indices during splice
+  for (const leadIndex of leadIndices) {
     const leadEmployee = unassigned[leadIndex];
     unassigned.splice(leadIndex, 1);
 
-    // Lead floats - they can place themselves wherever needed
     assignments.push({
       employee: leadEmployee,
       position: 'lead (floating)',
       matchQuality: 'best'
     });
-    leadAssigned = true;
+  }
+
+  // Handle boosters - they float to help everyone
+  const boosterIndices = [];
+  for (let i = unassigned.length - 1; i >= 0; i--) {
+    if (unassigned[i].isBooster === true) {
+      boosterIndices.push(i);
+    }
+  }
+
+  for (const boosterIndex of boosterIndices) {
+    const boosterEmployee = unassigned[boosterIndex];
+    unassigned.splice(boosterIndex, 1);
+
+    assignments.push({
+      employee: boosterEmployee,
+      position: 'booster (floating)',
+      matchQuality: 'best'
+    });
+  }
+
+  // Handle trainees - they shadow and aren't locked to positions
+  const traineeIndices = [];
+  for (let i = unassigned.length - 1; i >= 0; i--) {
+    if (unassigned[i].isInTraining === true) {
+      traineeIndices.push(i);
+    }
+  }
+
+  for (const traineeIndex of traineeIndices) {
+    const traineeEmployee = unassigned[traineeIndex];
+    unassigned.splice(traineeIndex, 1);
+
+    assignments.push({
+      employee: traineeEmployee,
+      position: 'in training',
+      matchQuality: 'training'
+    });
   }
 
   // Sort positions by priority (lower number = higher priority = fill first)
@@ -390,8 +433,10 @@ function assignEmployeesToPositions(workingEmployees, positions, startTime, prev
 
   // Re-sort assignments to match original position order for display
   const positionOrder = {};
-  positionOrder['lead (floating)'] = -1;  // Lead shows first
-  positionOrder['buns (lead)'] = -1;      // Lead on buns shows first
+  positionOrder['lead (floating)'] = -3;       // Leads show first
+  positionOrder['booster (floating)'] = -2;    // Boosters show second
+  positionOrder['in training'] = -1;           // Trainees show third
+  positionOrder['buns (lead)'] = -1;           // Lead on buns shows first
   filteredPositions.forEach((pos, idx) => positionOrder[pos] = idx);
   positionOrder['extra/support'] = 999;
 
