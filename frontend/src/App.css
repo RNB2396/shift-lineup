@@ -1676,6 +1676,9 @@ body {
     align-items: stretch;
     gap: 0.75rem;
     padding: 0.75rem;
+    box-sizing: border-box;
+    max-width: 100%;
+    overflow: hidden;
   }
 
   .shift-employee-info {
@@ -1690,19 +1693,25 @@ body {
     grid-template-columns: 1fr 1fr;
     gap: 0.5rem;
     width: 100%;
+    box-sizing: border-box;
   }
 
   .shift-time-inputs label {
+    display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 0.25rem;
     font-size: 0.75rem;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .shift-time-inputs input[type="time"] {
     width: 100%;
-    font-size: 0.875rem;
-    padding: 0.4rem;
+    min-width: 0;
+    font-size: 0.8rem;
+    padding: 0.35rem;
+    box-sizing: border-box;
   }
 
   .shift-role-toggles {
