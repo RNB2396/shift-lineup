@@ -436,17 +436,44 @@ app.post('/api/lineup/generate', authMiddleware, requireStore, async (req, res) 
     }
 
     let employees = [];
+    let positions = [];
+
     if (req.supabase) {
-      const { data, error } = await req.supabase
+      // Fetch employees
+      const { data: empData, error: empError } = await req.supabase
         .from('employees')
         .select('*')
         .eq('store_id', req.store.id);
 
-      if (error) throw error;
-      employees = data.map(toApiFormat);
+      if (empError) throw empError;
+      employees = empData.map(toApiFormat);
+
+      // Fetch positions for this store and house type
+      let positionsQuery = req.supabase
+        .from('positions')
+        .select('*')
+        .eq('store_id', req.store.id)
+        .eq('is_active', true);
+
+      if (houseType && ['foh', 'boh'].includes(houseType)) {
+        positionsQuery = positionsQuery.eq('house_type', houseType);
+      }
+
+      const { data: posData, error: posError } = await positionsQuery.order('priority', { ascending: true });
+      if (posError) throw posError;
+
+      // Convert to API format (snake_case to camelCase)
+      positions = (posData || []).map(pos => ({
+        id: pos.id,
+        name: pos.name,
+        houseType: pos.house_type,
+        priority: pos.priority,
+        timePeriods: pos.time_periods || ['all']
+      }));
     } else {
       const data = readEmployeesFromFile();
       employees = data.employees;
+      // No positions in local file mode - generator will need defaults
     }
 
     // Filter employees by house type if specified
@@ -457,7 +484,7 @@ app.post('/api/lineup/generate', authMiddleware, requireStore, async (req, res) 
       });
     }
 
-    const result = generateLineups(shiftAssignments, employees);
+    const result = generateLineups(shiftAssignments, employees, positions);
     res.json({ lineups: result.lineups, closingLineup: result.closingLineup, houseType: houseType || 'boh' });
   } catch (error) {
     console.error('Error generating lineup:', error);

@@ -1,4 +1,29 @@
-const { positionLayouts, getShiftPeriod, getLayout } = require('../config/positionLayouts');
+/**
+ * Time period definitions for position filtering
+ */
+const TIME_PERIOD_RANGES = {
+  morning: { start: 360, end: 630 },     // 6:00 - 10:30
+  lunch: { start: 630, end: 840 },       // 10:30 - 14:00
+  midday: { start: 840, end: 1020 },     // 14:00 - 17:00
+  dinner: { start: 1020, end: 1200 },    // 17:00 - 20:00
+  lateNight: { start: 1200, end: 1320 }  // 20:00 - 22:00
+};
+
+/**
+ * Get the shift period based on time
+ */
+function getShiftPeriod(timeString) {
+  const [hours, minutes] = timeString.split(':').map(Number);
+  const timeInMinutes = hours * 60 + minutes;
+
+  if (timeInMinutes >= 360 && timeInMinutes < 630) return 'morning';
+  if (timeInMinutes >= 630 && timeInMinutes < 840) return 'lunch';
+  if (timeInMinutes >= 840 && timeInMinutes < 1020) return 'midday';
+  if (timeInMinutes >= 1020 && timeInMinutes < 1200) return 'dinner';
+  if (timeInMinutes >= 1200 && timeInMinutes < 1320) return 'lateNight';
+
+  return null;
+}
 
 /**
  * Parse time string to minutes from midnight
@@ -89,12 +114,10 @@ function canWorkPosition(employee, position) {
 }
 
 /**
- * Position priorities - lower number = higher priority (fill first)
- * Positions are filled with employees marked as "best" at that position first
- * Priority order: leader=1, breading=2, machines=3, primary=4, secondary1=5,
- * DT fries=6, secondary2=7, buns=8, FC fries=9
+ * Default position priorities - lower number = higher priority (fill first)
+ * Used as fallback if positions don't have priorities set
  */
-const positionPriorities = {
+const defaultPositionPriorities = {
   'lead': 1,
   'breading': 2,
   'breader': 2,
@@ -112,6 +135,47 @@ const positionPriorities = {
   'fileter': 4,
   'primary2': 5
 };
+
+/**
+ * Filter positions by time period
+ * Positions with 'all' in timePeriods are always included
+ */
+function filterPositionsByTimePeriod(positions, shiftPeriod) {
+  return positions.filter(pos => {
+    const timePeriods = pos.timePeriods || ['all'];
+    return timePeriods.includes('all') || timePeriods.includes(shiftPeriod);
+  });
+}
+
+/**
+ * Get positions for lineup generation, sorted by priority
+ * Uses database positions if available, falls back to default priorities
+ */
+function getPositionsForPeriod(dbPositions, shiftPeriod, peopleCount) {
+  if (!dbPositions || dbPositions.length === 0) {
+    // Fallback to using default priorities - shouldn't happen in normal use
+    return null;
+  }
+
+  // Filter positions by time period
+  const filteredPositions = filterPositionsByTimePeriod(dbPositions, shiftPeriod);
+
+  // Sort by priority (lower = higher priority = fill first)
+  const sortedPositions = filteredPositions.sort((a, b) => {
+    const priorityA = a.priority || 99;
+    const priorityB = b.priority || 99;
+    return priorityA - priorityB;
+  });
+
+  // Take only as many positions as we have people (minus leaders/boosters/trainees)
+  // We'll fill all positions and extras become support
+  const positionNames = sortedPositions.map(p => p.name);
+
+  return {
+    positions: positionNames,
+    positionData: sortedPositions  // Keep full data for priority lookup
+  };
+}
 
 /**
  * Positions that a checklist person can be pulled from (in priority order)
@@ -137,13 +201,19 @@ function isDinnerRush(timeString) {
 /**
  * Get the priority of a position (handles combined positions like "secondary2/buns")
  * Returns the highest priority (lowest number) among the options
+ * positionPriorityMap: optional map of position name to priority from database
  */
-function getPositionPriority(position) {
+function getPositionPriority(position, positionPriorityMap = null) {
   const options = position.split('/');
   let highestPriority = 99;
 
   for (const opt of options) {
-    const priority = positionPriorities[opt] || 99;
+    // First check the dynamic priority map from database
+    let priority = positionPriorityMap?.[opt];
+    // Fall back to defaults if not in map
+    if (priority === undefined) {
+      priority = defaultPositionPriorities[opt] || 99;
+    }
     if (priority < highestPriority) {
       highestPriority = priority;
     }
@@ -205,8 +275,9 @@ function scoreEmployeeForPosition(employee, position, boostChecklistPositions = 
  * Leaders float and can place themselves anywhere - most important positions filled first with "best" employees
  * Boosters float to help everyone, trainees shadow and aren't locked to positions
  * previousAssignments helps minimize position changes between periods
+ * positionPriorityMap: map of position name -> priority from database
  */
-function assignEmployeesToPositions(workingEmployees, positions, startTime, previousAssignments = {}) {
+function assignEmployeesToPositions(workingEmployees, positions, startTime, previousAssignments = {}, positionPriorityMap = null) {
   const assignments = [];
   const unassigned = [...workingEmployees];
   const dinnerRush = isDinnerRush(startTime);
@@ -287,7 +358,7 @@ function assignEmployeesToPositions(workingEmployees, positions, startTime, prev
 
   const sortedPositions = [...positionsToFill].map(pos => ({
     position: pos,
-    priority: getPositionPriority(pos)
+    priority: getPositionPriority(pos, positionPriorityMap)
   })).sort((a, b) => a.priority - b.priority);
 
   // First pass: assign employees to positions in priority order
@@ -451,8 +522,11 @@ function assignEmployeesToPositions(workingEmployees, positions, startTime, prev
 
 /**
  * Generate lineups for all time periods
+ * @param shiftAssignments - employees and their shift times
+ * @param employees - full employee data with positions/bestPositions
+ * @param dbPositions - positions from database with priorities and time periods
  */
-function generateLineups(shiftAssignments, employees) {
+function generateLineups(shiftAssignments, employees, dbPositions = null) {
   // Merge employee data with shift assignments
   const enrichedAssignments = shiftAssignments.map(assignment => {
     const employee = employees.find(e => e.id === assignment.employeeId) || {};
@@ -469,6 +543,14 @@ function generateLineups(shiftAssignments, employees) {
   // Track previous assignments to minimize position changes
   let previousAssignments = {};
 
+  // Build priority map from database positions
+  const positionPriorityMap = {};
+  if (dbPositions && dbPositions.length > 0) {
+    for (const pos of dbPositions) {
+      positionPriorityMap[pos.name] = pos.priority || 99;
+    }
+  }
+
   for (let i = 0; i < changePoints.length - 1; i++) {
     const startMinutes = changePoints[i];
     const endMinutes = changePoints[i + 1];
@@ -480,10 +562,22 @@ function generateLineups(shiftAssignments, employees) {
 
     if (!shiftPeriod || workingEmployees.length === 0) continue;
 
-    const layoutInfo = getLayout(shiftPeriod, workingEmployees.length);
-    if (!layoutInfo) continue;
+    // Get positions filtered by time period and sorted by priority
+    let positionsToUse;
+    if (dbPositions && dbPositions.length > 0) {
+      const periodPositions = getPositionsForPeriod(dbPositions, shiftPeriod, workingEmployees.length);
+      if (periodPositions) {
+        positionsToUse = periodPositions.positions;
+      }
+    }
 
-    const assignments = assignEmployeesToPositions(workingEmployees, layoutInfo.positions, startTime, previousAssignments);
+    // If no database positions, skip this period (user needs to add positions)
+    if (!positionsToUse || positionsToUse.length === 0) {
+      console.warn(`No positions found for period ${shiftPeriod}, skipping lineup generation`);
+      continue;
+    }
+
+    const assignments = assignEmployeesToPositions(workingEmployees, positionsToUse, startTime, previousAssignments, positionPriorityMap);
 
     // Update previous assignments for next iteration
     previousAssignments = {};
@@ -513,8 +607,8 @@ function generateLineups(shiftAssignments, employees) {
       endTime,
       shiftPeriod,
       peopleCount: workingEmployees.length,
-      layoutUsed: layoutInfo.usedCount,
-      extraPeople: layoutInfo.extraPeople,
+      positionsUsed: positionsToUse.length,
+      extraPeople: Math.max(0, workingEmployees.length - positionsToUse.length),
       assignments: assignmentsWithBreaks
     });
   }
