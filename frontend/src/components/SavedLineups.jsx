@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { lineupService, supabase } from '../lib/supabase';
+import { lineupApi } from '../api';
 
 function SavedLineups() {
   const [savedLineups, setSavedLineups] = useState([]);
@@ -10,6 +11,8 @@ function SavedLineups() {
   const [draggedItem, setDraggedItem] = useState(null);
   const [dragOverItem, setDragOverItem] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [shiftAssignments, setShiftAssignments] = useState([]);
 
   useEffect(() => {
     loadSavedLineups();
@@ -139,6 +142,102 @@ function SavedLineups() {
     }
   };
 
+  // Extract shift assignments from saved lineups for editing
+  const enterEditMode = () => {
+    const lineups = savedLineups.filter(l => l.date === selectedDate && l.shiftPeriod !== 'closing');
+
+    // Build a map of employee shifts from the lineups
+    const employeeShifts = new Map();
+
+    for (const lineup of lineups) {
+      for (const assignment of lineup.assignments) {
+        if (!assignment.employee) continue;
+
+        const empId = assignment.employee.id;
+        const existing = employeeShifts.get(empId);
+
+        if (!existing) {
+          employeeShifts.set(empId, {
+            employeeId: empId,
+            name: assignment.employee.name,
+            isMinor: assignment.employee.isMinor,
+            positions: assignment.employee.positions || [],
+            bestPositions: assignment.employee.bestPositions || [],
+            startTime: lineup.startTime,
+            endTime: lineup.endTime,
+            isShiftLead: assignment.position.includes('lead'),
+            isBooster: assignment.position.includes('booster'),
+            isInTraining: assignment.position.includes('training')
+          });
+        } else {
+          // Extend the time range
+          if (lineup.startTime < existing.startTime) {
+            existing.startTime = lineup.startTime;
+          }
+          if (lineup.endTime > existing.endTime) {
+            existing.endTime = lineup.endTime;
+          }
+          // Check for roles
+          if (assignment.position.includes('lead')) existing.isShiftLead = true;
+          if (assignment.position.includes('booster')) existing.isBooster = true;
+          if (assignment.position.includes('training')) existing.isInTraining = true;
+        }
+      }
+    }
+
+    setShiftAssignments(Array.from(employeeShifts.values()).sort((a, b) =>
+      a.startTime.localeCompare(b.startTime)
+    ));
+    setEditMode(true);
+  };
+
+  const handleUpdateShiftTime = (employeeId, field, value) => {
+    setShiftAssignments(prev => prev.map(s =>
+      s.employeeId === employeeId ? { ...s, [field]: value } : s
+    ));
+  };
+
+  const handleRemoveFromShift = (employeeId) => {
+    setShiftAssignments(prev => prev.filter(s => s.employeeId !== employeeId));
+  };
+
+  const handleToggleRole = (employeeId, role) => {
+    setShiftAssignments(prev => prev.map(s =>
+      s.employeeId === employeeId ? { ...s, [role]: !s[role] } : s
+    ));
+  };
+
+  const handleRegenerateLineups = async () => {
+    if (shiftAssignments.length === 0) {
+      alert('No employees in the shift');
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      // Generate new lineups via API
+      const result = await lineupApi.generate(shiftAssignments);
+
+      // Delete old lineups for this date
+      await lineupService.deleteLineupsByDate(selectedDate);
+
+      // Save new lineups
+      await lineupService.saveAllLineups(result.lineups, selectedDate, result.closingLineup);
+
+      // Reload and exit edit mode
+      await loadSavedLineups();
+      setEditMode(false);
+
+      alert('Lineups regenerated successfully!');
+    } catch (err) {
+      console.error('Error regenerating lineups:', err);
+      alert('Failed to regenerate lineups: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const formatDate = (dateStr) => {
     const date = new Date(dateStr + 'T00:00:00');
     return date.toLocaleDateString('en-US', {
@@ -209,6 +308,7 @@ function SavedLineups() {
             <select
               value={selectedDate || ''}
               onChange={(e) => setSelectedDate(e.target.value)}
+              disabled={editMode}
             >
               {availableDates.map(date => (
                 <option key={date} value={date}>
@@ -216,22 +316,130 @@ function SavedLineups() {
                 </option>
               ))}
             </select>
-            {selectedDate && (
-              <button
-                onClick={() => handleDeleteDate(selectedDate)}
-                className="btn-small btn-danger"
-                disabled={saving}
-              >
-                Delete Day
-              </button>
+            {selectedDate && !editMode && (
+              <>
+                <button
+                  onClick={enterEditMode}
+                  className="btn-small btn-secondary"
+                  disabled={saving}
+                >
+                  Edit Shifts
+                </button>
+                <button
+                  onClick={() => handleDeleteDate(selectedDate)}
+                  className="btn-small btn-danger"
+                  disabled={saving}
+                >
+                  Delete Day
+                </button>
+              </>
+            )}
+            {editMode && (
+              <>
+                <button
+                  onClick={handleRegenerateLineups}
+                  className="btn-small btn-primary"
+                  disabled={saving}
+                >
+                  {saving ? 'Regenerating...' : 'Regenerate Lineups'}
+                </button>
+                <button
+                  onClick={() => setEditMode(false)}
+                  className="btn-small btn-secondary"
+                  disabled={saving}
+                >
+                  Cancel
+                </button>
+              </>
             )}
           </div>
 
-          <div className="drag-instructions">
-            <p>Drag and drop employees to swap their positions within a time block.</p>
-          </div>
+          {!editMode && (
+            <div className="drag-instructions">
+              <p>Drag and drop employees to swap their positions within a time block.</p>
+            </div>
+          )}
 
-          <div className="lineups-container">
+          {editMode ? (
+            <div className="edit-shifts-container">
+              <h3>Edit Shift Times for {formatDate(selectedDate)}</h3>
+              <p className="edit-instructions">
+                Adjust shift times, toggle roles, or remove employees. Click "Regenerate Lineups" to create new position assignments.
+              </p>
+
+              <div className="shift-assignments-list">
+                {shiftAssignments.map((shift) => (
+                  <div key={shift.employeeId} className="shift-assignment-row">
+                    <div className="shift-employee-info">
+                      <span className="shift-employee-name">
+                        {shift.name}
+                        {shift.isMinor && <span className="minor-badge">Minor</span>}
+                      </span>
+                    </div>
+
+                    <div className="shift-time-inputs">
+                      <label>
+                        Start:
+                        <input
+                          type="time"
+                          value={shift.startTime}
+                          onChange={(e) => handleUpdateShiftTime(shift.employeeId, 'startTime', e.target.value)}
+                        />
+                      </label>
+                      <label>
+                        End:
+                        <input
+                          type="time"
+                          value={shift.endTime}
+                          onChange={(e) => handleUpdateShiftTime(shift.employeeId, 'endTime', e.target.value)}
+                        />
+                      </label>
+                    </div>
+
+                    <div className="shift-role-toggles">
+                      <label className="role-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={shift.isShiftLead}
+                          onChange={() => handleToggleRole(shift.employeeId, 'isShiftLead')}
+                        />
+                        Lead
+                      </label>
+                      <label className="role-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={shift.isBooster}
+                          onChange={() => handleToggleRole(shift.employeeId, 'isBooster')}
+                        />
+                        Booster
+                      </label>
+                      <label className="role-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={shift.isInTraining}
+                          onChange={() => handleToggleRole(shift.employeeId, 'isInTraining')}
+                        />
+                        Training
+                      </label>
+                    </div>
+
+                    <button
+                      onClick={() => handleRemoveFromShift(shift.employeeId)}
+                      className="btn-small btn-danger"
+                      title="Remove from shift"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {shiftAssignments.length === 0 && (
+                <p className="empty-state">No employees in this shift. Cancel to go back.</p>
+              )}
+            </div>
+          ) : (
+            <div className="lineups-container">
             {filteredLineups.map((lineup) => (
               <div key={lineup.id} className={`lineup-card saved ${lineup.shiftPeriod === 'closing' ? 'closing-lineup' : ''}`}>
                 <div className="lineup-header">
@@ -292,7 +500,8 @@ function SavedLineups() {
                 )}
               </div>
             ))}
-          </div>
+            </div>
+          )}
         </>
       )}
 

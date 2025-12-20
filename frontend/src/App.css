@@ -1543,3 +1543,116 @@ body {
     flex-wrap: nowrap;
   }
 }
+
+/* Edit Shifts Mode
+   ======================================== */
+.edit-shifts-container {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.edit-shifts-container h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.edit-instructions {
+  color: #666;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: #fff3cd;
+  border-radius: 4px;
+  border-left: 4px solid #ffc107;
+}
+
+.shift-assignments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.shift-assignment-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.shift-employee-info {
+  flex: 1;
+  min-width: 150px;
+}
+
+.shift-employee-name {
+  font-weight: 600;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.shift-time-inputs {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.shift-time-inputs label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.shift-time-inputs input[type="time"] {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.shift-role-toggles {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.role-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: #666;
+  cursor: pointer;
+}
+
+.role-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+@media (max-width: 767px) {
+  .shift-assignment-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .shift-time-inputs,
+  .shift-role-toggles {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .shift-employee-info {
+    width: 100%;
+  }
+}
