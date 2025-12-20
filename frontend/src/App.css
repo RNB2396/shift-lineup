@@ -1508,13 +1508,19 @@ body {
   background: #e0e0e0;
 }
 
-.draggable-item.touch-dragging {
-  opacity: 0.7;
+.draggable-item.selected-for-swap {
   background: #d0e0ff;
-  transform: scale(1.02);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  z-index: 100;
-  position: relative;
+  border: 2px solid #2196f3;
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+}
+
+.draggable-item.swap-target {
+  border: 2px dashed #2196f3;
+  cursor: pointer;
+}
+
+.draggable-item.swap-target:active {
+  background: #e3f2fd;
 }
 
 .draggable-item.drag-over {
