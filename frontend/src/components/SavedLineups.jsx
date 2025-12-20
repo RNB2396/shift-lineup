@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { lineupService, supabase } from '../lib/supabase';
-import { lineupApi } from '../api';
+import { lineupApi, employeeApi } from '../api';
 
 function SavedLineups({ canEdit = true }) {
   const [savedLineups, setSavedLineups] = useState([]);
@@ -13,6 +13,11 @@ function SavedLineups({ canEdit = true }) {
   const [saving, setSaving] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [shiftAssignments, setShiftAssignments] = useState([]);
+  const [allEmployees, setAllEmployees] = useState([]);
+  const [showAddEmployee, setShowAddEmployee] = useState(false);
+  const [newEmployeeId, setNewEmployeeId] = useState('');
+  const [newStartTime, setNewStartTime] = useState('10:00');
+  const [newEndTime, setNewEndTime] = useState('18:00');
 
   useEffect(() => {
     loadSavedLineups();
@@ -143,7 +148,15 @@ function SavedLineups({ canEdit = true }) {
   };
 
   // Extract shift assignments from saved lineups for editing
-  const enterEditMode = () => {
+  const enterEditMode = async () => {
+    // Load all employees for the add employee dropdown
+    try {
+      const employees = await employeeApi.getAll();
+      setAllEmployees(employees);
+    } catch (err) {
+      console.error('Error loading employees:', err);
+    }
+
     const lineups = savedLineups.filter(l => l.date === selectedDate && l.shiftPeriod !== 'closing');
 
     // Build a map of employee shifts from the lineups
@@ -188,7 +201,44 @@ function SavedLineups({ canEdit = true }) {
     setShiftAssignments(Array.from(employeeShifts.values()).sort((a, b) =>
       a.startTime.localeCompare(b.startTime)
     ));
+    setShowAddEmployee(false);
+    setNewEmployeeId('');
     setEditMode(true);
+  };
+
+  // Get employees not currently in the shift
+  const getAvailableEmployees = () => {
+    const assignedIds = new Set(shiftAssignments.map(s => s.employeeId));
+    return allEmployees.filter(emp => !assignedIds.has(emp.id));
+  };
+
+  // Add a new employee to the shift
+  const handleAddEmployee = () => {
+    if (!newEmployeeId) return;
+
+    const employee = allEmployees.find(e => e.id === newEmployeeId);
+    if (!employee) return;
+
+    const newAssignment = {
+      employeeId: employee.id,
+      name: employee.name,
+      isMinor: employee.isMinor,
+      positions: employee.positions || [],
+      bestPositions: employee.bestPositions || [],
+      startTime: newStartTime,
+      endTime: newEndTime,
+      isShiftLead: false,
+      isBooster: false,
+      isInTraining: false
+    };
+
+    setShiftAssignments(prev => [...prev, newAssignment].sort((a, b) =>
+      a.startTime.localeCompare(b.startTime)
+    ));
+
+    // Reset the form
+    setNewEmployeeId('');
+    setShowAddEmployee(false);
   };
 
   const handleUpdateShiftTime = (employeeId, field, value) => {
@@ -435,8 +485,75 @@ function SavedLineups({ canEdit = true }) {
               </div>
 
               {shiftAssignments.length === 0 && (
-                <p className="empty-state">No employees in this shift. Cancel to go back.</p>
+                <p className="empty-state">No employees in this shift. Add someone or cancel to go back.</p>
               )}
+
+              {/* Add Employee Section */}
+              <div className="add-employee-section">
+                {showAddEmployee ? (
+                  <div className="add-employee-form">
+                    <div className="add-employee-row">
+                      <select
+                        value={newEmployeeId}
+                        onChange={(e) => setNewEmployeeId(e.target.value)}
+                        className="employee-select"
+                      >
+                        <option value="">Select employee...</option>
+                        {getAvailableEmployees().map(emp => (
+                          <option key={emp.id} value={emp.id}>
+                            {emp.name} {emp.isMinor ? '(Minor)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                      <label>
+                        Start:
+                        <input
+                          type="time"
+                          value={newStartTime}
+                          onChange={(e) => setNewStartTime(e.target.value)}
+                        />
+                      </label>
+                      <label>
+                        End:
+                        <input
+                          type="time"
+                          value={newEndTime}
+                          onChange={(e) => setNewEndTime(e.target.value)}
+                        />
+                      </label>
+                    </div>
+                    <div className="add-employee-actions">
+                      <button
+                        onClick={handleAddEmployee}
+                        className="btn-small btn-primary"
+                        disabled={!newEmployeeId}
+                      >
+                        Add to Shift
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowAddEmployee(false);
+                          setNewEmployeeId('');
+                        }}
+                        className="btn-small btn-secondary"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setShowAddEmployee(true)}
+                    className="btn-secondary add-employee-btn"
+                    disabled={getAvailableEmployees().length === 0}
+                  >
+                    + Add Employee
+                  </button>
+                )}
+                {getAvailableEmployees().length === 0 && !showAddEmployee && (
+                  <p className="no-employees-note">All employees are already in this shift.</p>
+                )}
+              </div>
             </div>
           ) : (
             <div className="lineups-container">
