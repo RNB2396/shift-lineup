@@ -537,4 +537,3 @@ app.listen(PORT, () => {
   console.log('  POST   /api/lineup/export   - Export to Excel');
   console.log('  GET    /health              - Health check');
 });
-# Health check comment
