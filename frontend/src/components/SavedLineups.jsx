@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { lineupService, supabase } from '../lib/supabase';
 import { lineupApi, employeeApi } from '../api';
 
@@ -18,6 +18,12 @@ function SavedLineups({ canEdit = true }) {
   const [newEmployeeId, setNewEmployeeId] = useState('');
   const [newStartTime, setNewStartTime] = useState('10:00');
   const [newEndTime, setNewEndTime] = useState('18:00');
+
+  // Touch drag state
+  const [touchDragging, setTouchDragging] = useState(false);
+  const touchTimerRef = useRef(null);
+  const touchStartRef = useRef(null);
+  const draggedElementRef = useRef(null);
 
   useEffect(() => {
     loadSavedLineups();
@@ -75,6 +81,135 @@ function SavedLineups({ canEdit = true }) {
   const handleDragLeave = () => {
     setDragOverItem(null);
   };
+
+  // Touch event handlers for mobile drag and drop
+  const handleTouchStart = useCallback((e, lineupId, assignment) => {
+    if (!canEdit) return;
+
+    const touch = e.touches[0];
+    touchStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      lineupId,
+      assignment
+    };
+
+    // Start a timer for press-and-hold (300ms)
+    touchTimerRef.current = setTimeout(() => {
+      setDraggedItem({ lineupId, assignment });
+      setTouchDragging(true);
+      draggedElementRef.current = e.target.closest('.assignment-card');
+      if (draggedElementRef.current) {
+        draggedElementRef.current.classList.add('touch-dragging');
+      }
+      // Vibrate to indicate drag started (if supported)
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+    }, 300);
+  }, [canEdit]);
+
+  const handleTouchMove = useCallback((e, lineupId) => {
+    if (!touchStartRef.current) return;
+
+    const touch = e.touches[0];
+    const moveThreshold = 10;
+    const dx = Math.abs(touch.clientX - touchStartRef.current.x);
+    const dy = Math.abs(touch.clientY - touchStartRef.current.y);
+
+    // If moved before hold time, cancel the drag initiation
+    if (!touchDragging && (dx > moveThreshold || dy > moveThreshold)) {
+      if (touchTimerRef.current) {
+        clearTimeout(touchTimerRef.current);
+        touchTimerRef.current = null;
+      }
+      return;
+    }
+
+    if (touchDragging) {
+      e.preventDefault(); // Prevent scrolling while dragging
+
+      // Find the element under the touch point
+      const elementsAtPoint = document.elementsFromPoint(touch.clientX, touch.clientY);
+      const targetCard = elementsAtPoint.find(el =>
+        el.classList.contains('assignment-card') && el !== draggedElementRef.current
+      );
+
+      if (targetCard) {
+        const targetId = targetCard.dataset.assignmentId;
+        const targetLineupId = targetCard.dataset.lineupId;
+
+        if (targetId && targetLineupId === String(lineupId)) {
+          // Find the assignment object
+          const lineup = savedLineups.find(l => l.id === lineupId);
+          const targetAssignment = lineup?.assignments.find(a => String(a.id) === targetId);
+
+          if (targetAssignment && draggedItem?.assignment.id !== targetAssignment.id) {
+            setDragOverItem({ lineupId, assignment: targetAssignment });
+          }
+        }
+      } else {
+        setDragOverItem(null);
+      }
+    }
+  }, [touchDragging, draggedItem, savedLineups]);
+
+  const handleTouchEnd = useCallback(async () => {
+    // Clear the hold timer
+    if (touchTimerRef.current) {
+      clearTimeout(touchTimerRef.current);
+      touchTimerRef.current = null;
+    }
+
+    if (draggedElementRef.current) {
+      draggedElementRef.current.classList.remove('touch-dragging');
+    }
+
+    // If we were dragging and have a target, perform the swap
+    if (touchDragging && draggedItem && dragOverItem) {
+      const sourceAssignment = draggedItem.assignment;
+      const targetAssignment = dragOverItem.assignment;
+
+      if (sourceAssignment.id !== targetAssignment.id &&
+          draggedItem.lineupId === dragOverItem.lineupId) {
+        try {
+          setSaving(true);
+          await lineupService.swapAssignments(sourceAssignment.id, targetAssignment.id);
+
+          setSavedLineups(prevLineups =>
+            prevLineups.map(lineup => {
+              if (lineup.id !== draggedItem.lineupId) return lineup;
+
+              return {
+                ...lineup,
+                assignments: lineup.assignments.map(a => {
+                  if (a.id === sourceAssignment.id) {
+                    return { ...a, position: targetAssignment.position };
+                  }
+                  if (a.id === targetAssignment.id) {
+                    return { ...a, position: sourceAssignment.position };
+                  }
+                  return a;
+                })
+              };
+            })
+          );
+        } catch (err) {
+          console.error('Error swapping assignments:', err);
+          alert('Failed to swap positions');
+        } finally {
+          setSaving(false);
+        }
+      }
+    }
+
+    // Reset all touch state
+    setTouchDragging(false);
+    setDraggedItem(null);
+    setDragOverItem(null);
+    touchStartRef.current = null;
+    draggedElementRef.current = null;
+  }, [touchDragging, draggedItem, dragOverItem]);
 
   const handleDrop = async (e, targetLineupId, targetAssignment) => {
     e.preventDefault();
@@ -406,7 +541,10 @@ function SavedLineups({ canEdit = true }) {
 
           {!editMode && canEdit && (
             <div className="drag-instructions">
-              <p>Drag and drop employees to swap their positions within a time block.</p>
+              <p>
+                <span className="desktop-hint">Drag and drop employees to swap their positions within a time block.</span>
+                <span className="mobile-hint">Press and hold an employee, then drag to swap positions.</span>
+              </p>
             </div>
           )}
 
@@ -572,10 +710,14 @@ function SavedLineups({ canEdit = true }) {
                   {lineup.assignments.map((assignment) => (
                     <div
                       key={assignment.id}
+                      data-assignment-id={assignment.id}
+                      data-lineup-id={lineup.id}
                       className={`assignment-card ${canEdit ? 'draggable-item' : ''} ${
                         assignment.needsBreak ? 'needs-break' : ''
                       } ${
                         dragOverItem?.assignment.id === assignment.id ? 'drag-over' : ''
+                      } ${
+                        touchDragging && draggedItem?.assignment.id === assignment.id ? 'touch-dragging' : ''
                       }`}
                       draggable={canEdit}
                       onDragStart={canEdit ? (e) => handleDragStart(e, lineup.id, assignment) : undefined}
@@ -583,6 +725,10 @@ function SavedLineups({ canEdit = true }) {
                       onDragOver={canEdit ? (e) => handleDragOver(e, lineup.id, assignment) : undefined}
                       onDragLeave={canEdit ? handleDragLeave : undefined}
                       onDrop={canEdit ? (e) => handleDrop(e, lineup.id, assignment) : undefined}
+                      onTouchStart={canEdit ? (e) => handleTouchStart(e, lineup.id, assignment) : undefined}
+                      onTouchMove={canEdit ? (e) => handleTouchMove(e, lineup.id) : undefined}
+                      onTouchEnd={canEdit ? handleTouchEnd : undefined}
+                      onTouchCancel={canEdit ? handleTouchEnd : undefined}
                     >
                       {canEdit && <span className="drag-handle">&#8942;&#8942;</span>}
                       <span className="assignment-position">{assignment.position}</span>

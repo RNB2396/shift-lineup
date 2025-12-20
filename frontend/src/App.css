@@ -1462,6 +1462,20 @@ body {
   font-size: 0.875rem;
 }
 
+/* Show desktop hint on larger screens, mobile hint on touch devices */
+.drag-instructions .mobile-hint {
+  display: none;
+}
+
+@media (max-width: 767px), (hover: none) {
+  .drag-instructions .desktop-hint {
+    display: none;
+  }
+  .drag-instructions .mobile-hint {
+    display: inline;
+  }
+}
+
 .lineup-card.saved {
   border-color: #28a745;
 }
@@ -1483,6 +1497,15 @@ body {
 .draggable-item.dragging {
   opacity: 0.5;
   background: #e0e0e0;
+}
+
+.draggable-item.touch-dragging {
+  opacity: 0.7;
+  background: #d0e0ff;
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  position: relative;
 }
 
 .draggable-item.drag-over {
