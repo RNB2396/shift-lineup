@@ -170,12 +170,51 @@ function TeamManager() {
     }
   };
 
+  const handleLeaveStore = async () => {
+    const otherOperators = teamMembers.filter(m => m.role === 'owner' && m.user_id !== user?.id);
+
+    if (otherOperators.length === 0) {
+      alert('You cannot leave - there must be at least one other operator in the store.');
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to leave ${currentStore.name}? You will lose access immediately.`)) {
+      return;
+    }
+
+    try {
+      const myMembership = teamMembers.find(m => m.user_id === user?.id);
+      if (!myMembership) return;
+
+      const { error } = await supabase
+        .from('store_users')
+        .delete()
+        .eq('id', myMembership.id);
+
+      if (error) throw error;
+
+      // Reload the page to reset store context
+      window.location.reload();
+    } catch (err) {
+      console.error('Error leaving store:', err);
+      alert('Failed to leave store: ' + (err.message || 'Unknown error'));
+    }
+  };
+
+  // Check if current user can leave the store (remove themselves)
+  const canLeaveStore = () => {
+    // Only operators can leave, and only if there's another operator
+    if (userRole !== 'owner') return false;
+    const otherOperators = teamMembers.filter(m => m.role === 'owner' && m.user_id !== user?.id);
+    return otherOperators.length > 0;
+  };
+
   // Check if current user can remove a specific member
   const canRemoveMember = (member) => {
-    // Can't remove yourself
-    if (member.user_id === user?.id) return false;
-    // Can't remove owners
+    // Can't remove owners (except yourself via Leave Store)
     if (member.role === 'owner') return false;
+    // Can't remove yourself through this function
+    if (member.user_id === user?.id) return false;
     // Only owners and directors can remove
     if (!canInviteUsers) return false;
     // Directors can't remove other directors
@@ -248,14 +287,24 @@ function TeamManager() {
     <div className="team-manager">
       <div className="section-header">
         <h2>Team Members</h2>
-        {canInviteUsers && (
-          <button
-            className="btn-primary"
-            onClick={() => setShowInviteModal(true)}
-          >
-            Invite Team Member
-          </button>
-        )}
+        <div className="header-actions">
+          {canInviteUsers && (
+            <button
+              className="btn-primary"
+              onClick={() => setShowInviteModal(true)}
+            >
+              Invite Team Member
+            </button>
+          )}
+          {canLeaveStore() && (
+            <button
+              className="btn-danger"
+              onClick={handleLeaveStore}
+            >
+              Leave Store
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Current Team Members */}
