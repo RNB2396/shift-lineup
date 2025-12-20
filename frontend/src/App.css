@@ -1312,7 +1312,7 @@ body {
 @media (min-width: 1400px) {
   .lineup-page {
     display: grid;
-    grid-template-columns: minmax(400px, 1fr) minmax(500px, 2fr);
+    grid-template-columns: minmax(400px, 500px) 1fr;
     gap: 2rem;
     align-items: start;
   }
@@ -1327,13 +1327,13 @@ body {
     grid-template-columns: repeat(3, 1fr);
   }
 
+  /* Lineup cards always stacked vertically - single column */
   .lineups-container {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
   }
 
   .lineup-card {
     break-inside: avoid;
-    min-width: 280px;
   }
 }
 
@@ -1349,17 +1349,9 @@ body {
     grid-template-columns: repeat(4, 1fr);
   }
 
+  /* Keep lineup cards stacked */
   .lineups-container {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-/* ========================================
-   ULTRA WIDE DESKTOP (2200px+)
-   ======================================== */
-@media (min-width: 2200px) {
-  .lineups-container {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: 1fr;
   }
 }
 
