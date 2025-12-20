@@ -56,6 +56,11 @@ body {
   font-weight: 500;
 }
 
+.store-badge.admin-badge {
+  background: #ffc107;
+  color: #333;
+}
+
 .logout-btn {
   background: transparent !important;
   border: 1px solid rgba(255,255,255,0.5) !important;

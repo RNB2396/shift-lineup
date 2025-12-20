@@ -9,6 +9,7 @@ import ShiftInput from './components/ShiftInput';
 import LineupDisplay from './components/LineupDisplay';
 import SavedLineups from './components/SavedLineups';
 import TeamManager from './components/TeamManager';
+import AdminPanel from './components/AdminPanel';
 import { employeeApi } from './api';
 import './App.css';
 
@@ -37,9 +38,10 @@ function AppContent() {
   const [loading, setLoading] = useState(true);
   const [isResetPassword, setIsResetPassword] = useState(false);
   const [inviteToken, setInviteToken] = useState(null);
+  const [isAdminPage, setIsAdminPage] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Check if this is a password reset flow or invite acceptance
+  // Check if this is a password reset flow, invite acceptance, or admin page
   useEffect(() => {
     const hash = window.location.hash;
     if (hash && hash.includes('type=recovery')) {
@@ -51,6 +53,11 @@ function AppContent() {
     const token = params.get('token');
     if (window.location.pathname === '/accept-invite' && token) {
       setInviteToken(token);
+    }
+
+    // Check for admin page
+    if (window.location.pathname === '/admin') {
+      setIsAdminPage(true);
     }
   }, []);
 
@@ -90,6 +97,34 @@ function AppContent() {
           window.location.reload();
         }}
       />
+    );
+  }
+
+  // Show admin panel if on /admin route (requires login first)
+  if (isAdminPage && isAuthenticated) {
+    return (
+      <div className="app">
+        <header className="app-header admin-header-bar">
+          <div className="header-left">
+            <h1>Shift Lineup</h1>
+            <span className="store-badge admin-badge">Admin</span>
+          </div>
+          <nav className="tabs desktop-tabs">
+            <button onClick={() => {
+              setIsAdminPage(false);
+              window.history.replaceState(null, '', '/');
+            }}>
+              Back to App
+            </button>
+            <button className="logout-btn" onClick={logout}>
+              Sign Out
+            </button>
+          </nav>
+        </header>
+        <main className="app-main">
+          <AdminPanel />
+        </main>
+      </div>
     );
   }
 
