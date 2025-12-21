@@ -156,8 +156,17 @@ function PositionManager({ houseType }) {
                   type="number"
                   min="1"
                   max="99"
-                  value={formData.priority}
-                  onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) || 99 })}
+                  value={formData.priority === '' ? '' : formData.priority}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData({ ...formData, priority: val === '' ? '' : parseInt(val) || '' });
+                  }}
+                  onBlur={(e) => {
+                    // On blur, default to 99 if empty
+                    if (formData.priority === '' || isNaN(formData.priority)) {
+                      setFormData({ ...formData, priority: 99 });
+                    }
+                  }}
                   required
                 />
                 <small>Positions with lower priority numbers are filled first when generating lineups.</small>
