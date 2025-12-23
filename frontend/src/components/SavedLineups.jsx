@@ -288,8 +288,25 @@ function SavedLineups({ canEdit = true, houseType = 'boh' }) {
       }
     }
 
-    // Include employees from closing lineup who might not be in regular lineups
-    // and ensure closers have the correct end time (the last regular lineup's end time)
+    // Ensure employees in the last lineup have their end time set correctly
+    // so the backend will include them in the closing lineup generation
+    const lastRegularLineup = regularLineups.length > 0
+      ? regularLineups.reduce((last, l) => l.endTime > last.endTime ? l : last, regularLineups[0])
+      : null;
+
+    if (lastRegularLineup) {
+      for (const assignment of lastRegularLineup.assignments) {
+        if (!assignment.employee) continue;
+        const empId = assignment.employee.id;
+        const existing = employeeShifts.get(empId);
+        if (existing) {
+          // Set end time to match the last lineup's end time so they're included in closing
+          existing.endTime = lastRegularEndTime;
+        }
+      }
+    }
+
+    // Also include employees from closing lineup who might not be in regular lineups
     if (closingLineupData && closingLineupData.assignments) {
       for (const assignment of closingLineupData.assignments) {
         if (!assignment.employee) continue;
