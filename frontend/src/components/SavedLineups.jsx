@@ -348,14 +348,14 @@ function SavedLineups({ canEdit = true, houseType = 'boh' }) {
     try {
       setSaving(true);
 
-      // Generate new lineups via API
-      const result = await lineupApi.generate(shiftAssignments);
+      // Generate new lineups via API (pass houseType)
+      const result = await lineupApi.generate(shiftAssignments, houseType);
 
       // Delete old lineups for this date
       await lineupService.deleteLineupsByDate(selectedDate);
 
-      // Save new lineups
-      await lineupService.saveAllLineups(result.lineups, selectedDate, result.closingLineup);
+      // Save new lineups (pass houseType and closingLineup)
+      await lineupService.saveAllLineups(result.lineups, selectedDate, result.closingLineup, houseType);
 
       // Reload and exit edit mode
       await loadSavedLineups();
