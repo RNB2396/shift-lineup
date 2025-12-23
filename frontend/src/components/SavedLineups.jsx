@@ -104,27 +104,30 @@ function SavedLineups({ canEdit = true, houseType = 'boh' }) {
     if (selectedForSwap) {
       // We have a selection - this tap is to complete the swap
       if (selectedForSwap.lineupId === lineupId && selectedForSwap.assignment.id !== assignment.id) {
-        // Same lineup, different person - do the swap
+        // Same lineup, different person - do the swap with cascade to later lineups
         try {
           setSaving(true);
-          await lineupService.swapAssignments(selectedForSwap.assignment.id, assignment.id);
+          const result = await lineupService.swapAssignmentsWithCascade(
+            selectedForSwap.assignment.id,
+            assignment.id,
+            lineupId,
+            savedLineups
+          );
 
+          // Update local state for all affected assignments
           setSavedLineups(prevLineups =>
             prevLineups.map(lineup => {
-              if (lineup.id !== lineupId) return lineup;
+              const updatedAssignments = lineup.assignments.map(a => {
+                if (result.updatesToPosition1.includes(a.id)) {
+                  return { ...a, position: result.position1 };
+                }
+                if (result.updatesToPosition2.includes(a.id)) {
+                  return { ...a, position: result.position2 };
+                }
+                return a;
+              });
 
-              return {
-                ...lineup,
-                assignments: lineup.assignments.map(a => {
-                  if (a.id === selectedForSwap.assignment.id) {
-                    return { ...a, position: assignment.position };
-                  }
-                  if (a.id === assignment.id) {
-                    return { ...a, position: selectedForSwap.assignment.position };
-                  }
-                  return a;
-                })
-              };
+              return { ...lineup, assignments: updatedAssignments };
             })
           );
 
@@ -178,26 +181,28 @@ function SavedLineups({ canEdit = true, houseType = 'boh' }) {
     try {
       setSaving(true);
 
-      // Swap assignments in the database
-      await lineupService.swapAssignments(sourceAssignment.id, targetAssignment.id);
+      // Swap assignments in the database with cascade to later lineups
+      const result = await lineupService.swapAssignmentsWithCascade(
+        sourceAssignment.id,
+        targetAssignment.id,
+        targetLineupId,
+        savedLineups
+      );
 
-      // Update local state
+      // Update local state for all affected assignments
       setSavedLineups(prevLineups =>
         prevLineups.map(lineup => {
-          if (lineup.id !== targetLineupId) return lineup;
+          const updatedAssignments = lineup.assignments.map(a => {
+            if (result.updatesToPosition1.includes(a.id)) {
+              return { ...a, position: result.position1 };
+            }
+            if (result.updatesToPosition2.includes(a.id)) {
+              return { ...a, position: result.position2 };
+            }
+            return a;
+          });
 
-          return {
-            ...lineup,
-            assignments: lineup.assignments.map(a => {
-              if (a.id === sourceAssignment.id) {
-                return { ...a, position: targetAssignment.position };
-              }
-              if (a.id === targetAssignment.id) {
-                return { ...a, position: sourceAssignment.position };
-              }
-              return a;
-            })
-          };
+          return { ...lineup, assignments: updatedAssignments };
         })
       );
     } catch (err) {

@@ -183,6 +183,82 @@ export const lineupService = {
     return true;
   },
 
+  // Swap two assignments and cascade to all subsequent lineups for the same day
+  async swapAssignmentsWithCascade(assignment1Id, assignment2Id, lineupId, allLineups) {
+    if (!supabase) throw new Error('Supabase not configured');
+
+    // Get both assignments with their employee IDs
+    const { data: assignments, error: fetchError } = await supabase
+      .from('lineup_assignments')
+      .select('*, lineup_id')
+      .in('id', [assignment1Id, assignment2Id]);
+
+    if (fetchError) throw fetchError;
+    if (assignments.length !== 2) throw new Error('Assignments not found');
+
+    const [a1, a2] = assignments;
+    const employee1Id = a1.employee_id;
+    const employee2Id = a2.employee_id;
+    const position1 = a1.position;
+    const position2 = a2.position;
+
+    // Get the current lineup to find its start time
+    const currentLineup = allLineups.find(l => l.id === lineupId);
+    if (!currentLineup) throw new Error('Current lineup not found');
+
+    // Find all lineups for the same date that come after this one (by start time)
+    const laterLineups = allLineups.filter(l =>
+      l.date === currentLineup.date &&
+      l.startTime > currentLineup.startTime &&
+      l.shiftPeriod !== 'closing'
+    );
+
+    // Collect all assignment IDs to update
+    const updatesToPosition1 = [a2.id]; // a2 gets position1
+    const updatesToPosition2 = [a1.id]; // a1 gets position2
+
+    // For each later lineup, find if these employees are there and need swapping
+    for (const laterLineup of laterLineups) {
+      const emp1Assignment = laterLineup.assignments.find(a => a.employee?.id === employee1Id);
+      const emp2Assignment = laterLineup.assignments.find(a => a.employee?.id === employee2Id);
+
+      // If employee1 is in position1, move them to position2
+      if (emp1Assignment && emp1Assignment.position === position1) {
+        updatesToPosition2.push(emp1Assignment.id);
+      }
+      // If employee2 is in position2, move them to position1
+      if (emp2Assignment && emp2Assignment.position === position2) {
+        updatesToPosition1.push(emp2Assignment.id);
+      }
+    }
+
+    // Perform the updates
+    if (updatesToPosition1.length > 0) {
+      const { error } = await supabase
+        .from('lineup_assignments')
+        .update({ position: position1 })
+        .in('id', updatesToPosition1);
+      if (error) throw error;
+    }
+
+    if (updatesToPosition2.length > 0) {
+      const { error } = await supabase
+        .from('lineup_assignments')
+        .update({ position: position2 })
+        .in('id', updatesToPosition2);
+      if (error) throw error;
+    }
+
+    return {
+      updatesToPosition1,
+      updatesToPosition2,
+      position1,
+      position2,
+      employee1Id,
+      employee2Id
+    };
+  },
+
   // Delete a lineup
   async deleteLineup(lineupId) {
     if (!supabase) throw new Error('Supabase not configured');
