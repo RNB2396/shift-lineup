@@ -414,12 +414,84 @@ function assignEmployeesToPositions(workingEmployees, positions, startTime, prev
     });
   }
 
-  // Optimization pass: swap fallback/capable assignments with better matches
-  // This ensures the best possible lineup by allowing "best" employees to take
-  // positions from "fallback" or "capable" employees
+  // Optimization pass: find swaps that increase total "best" matches
+  // This handles cases like:
+  // - Dakota: best at secondary AND primary
+  // - Anele: best at secondary only
+  // Greedy assigns Dakota->secondary (best), Anele->primary (capable)
+  // But swapping gives Dakota->primary (best), Anele->secondary (best) = better!
   let improved = true;
   let iterations = 0;
   const maxIterations = 100; // Safety limit to prevent infinite loops
+
+  while (improved && iterations < maxIterations) {
+    iterations++;
+    improved = false;
+
+    // Try all pairs of assignments to find beneficial swaps
+    for (let i = 0; i < assignments.length; i++) {
+      const assignmentA = assignments[i];
+
+      // Skip special positions
+      if (assignmentA.position.includes('lead') ||
+          assignmentA.position.includes('booster') ||
+          assignmentA.position === 'in training' ||
+          assignmentA.position === 'extra/support') {
+        continue;
+      }
+
+      for (let j = i + 1; j < assignments.length; j++) {
+        const assignmentB = assignments[j];
+
+        // Skip special positions
+        if (assignmentB.position.includes('lead') ||
+            assignmentB.position.includes('booster') ||
+            assignmentB.position === 'in training' ||
+            assignmentB.position === 'extra/support') {
+          continue;
+        }
+
+        // Calculate current scores
+        const scoreAatA = scoreEmployeeForPosition(assignmentA.employee, assignmentA.position, false, null);
+        const scoreBatB = scoreEmployeeForPosition(assignmentB.employee, assignmentB.position, false, null);
+        const currentTotal = scoreAatA + scoreBatB;
+
+        // Calculate swapped scores
+        const scoreAatB = scoreEmployeeForPosition(assignmentA.employee, assignmentB.position, false, null);
+        const scoreBatA = scoreEmployeeForPosition(assignmentB.employee, assignmentA.position, false, null);
+        const swappedTotal = scoreAatB + scoreBatA;
+
+        // Count "best" matches (score >= 10) before and after
+        const currentBestCount = (scoreAatA >= 10 ? 1 : 0) + (scoreBatB >= 10 ? 1 : 0);
+        const swappedBestCount = (scoreAatB >= 10 ? 1 : 0) + (scoreBatA >= 10 ? 1 : 0);
+
+        // Swap if it increases the number of "best" matches
+        // Or if same number of "best" but higher total score
+        const shouldSwap = swappedBestCount > currentBestCount ||
+          (swappedBestCount === currentBestCount && swappedTotal > currentTotal);
+
+        if (shouldSwap) {
+          // Perform the swap
+          const tempEmployee = assignmentA.employee;
+          assignmentA.employee = assignmentB.employee;
+          assignmentB.employee = tempEmployee;
+
+          // Update match qualities
+          assignmentA.matchQuality = scoreBatA >= 10 ? 'best' : scoreBatA >= 5 ? 'capable' : 'fallback';
+          assignmentB.matchQuality = scoreAatB >= 10 ? 'best' : scoreAatB >= 5 ? 'capable' : 'fallback';
+
+          improved = true;
+          break;
+        }
+      }
+
+      if (improved) break;
+    }
+  }
+
+  // Second pass: pull people from extra/support if they're "best" at an unfilled position
+  improved = true;
+  iterations = 0;
   while (improved && iterations < maxIterations) {
     iterations++;
     improved = false;
@@ -427,28 +499,22 @@ function assignEmployeesToPositions(workingEmployees, positions, startTime, prev
     for (let i = 0; i < assignments.length; i++) {
       const currentAssignment = assignments[i];
 
-      // Skip lead positions and extra/support
+      // Only try to improve non-best regular positions
       if (currentAssignment.position.includes('lead') ||
-          currentAssignment.position === 'extra/support') {
+          currentAssignment.position.includes('booster') ||
+          currentAssignment.position === 'in training' ||
+          currentAssignment.position === 'extra/support' ||
+          currentAssignment.matchQuality === 'best') {
         continue;
       }
 
-      // Only try to improve fallback or capable assignments
-      if (currentAssignment.matchQuality !== 'fallback' &&
-          currentAssignment.matchQuality !== 'capable') {
-        continue;
-      }
-
-      // Look for a better employee currently in a lower-quality match or extra/support
+      // Look for someone in extra/support who is "best" at this position
       for (let j = 0; j < assignments.length; j++) {
         if (i === j) continue;
 
         const otherAssignment = assignments[j];
+        if (otherAssignment.position !== 'extra/support') continue;
 
-        // Skip lead positions
-        if (otherAssignment.position.includes('lead')) continue;
-
-        // Check if the other employee would be "best" at current position
         const otherEmployeeScore = scoreEmployeeForPosition(
           otherAssignment.employee,
           currentAssignment.position,
@@ -456,48 +522,17 @@ function assignEmployeesToPositions(workingEmployees, positions, startTime, prev
           null
         );
 
-        // Other employee is "best" at this position (score >= 10)
         if (otherEmployeeScore >= 10) {
-          // Check if current employee can work the other position
-          const currentEmployeeScoreAtOther = otherAssignment.position === 'extra/support'
-            ? 0
-            : scoreEmployeeForPosition(
-                currentAssignment.employee,
-                otherAssignment.position,
-                false,
-                null
-              );
+          // Swap: bring the "best" person up from extra/support
+          const tempEmployee = currentAssignment.employee;
+          currentAssignment.employee = otherAssignment.employee;
+          otherAssignment.employee = tempEmployee;
 
-          // Swap is beneficial if:
-          // 1. Other position is extra/support (we're pulling someone up)
-          // 2. Current employee can work the other position
-          const shouldSwap = otherAssignment.position === 'extra/support' ||
-            currentEmployeeScoreAtOther > 0;
+          currentAssignment.matchQuality = 'best';
+          otherAssignment.matchQuality = 'extra';
 
-          if (shouldSwap) {
-            // Store references to employees before swapping
-            const currentEmployee = currentAssignment.employee;
-            const otherEmployee = otherAssignment.employee;
-
-            // Move "best" employee to this position
-            currentAssignment.employee = otherEmployee;
-            currentAssignment.matchQuality = 'best';
-
-            // Move displaced employee to the other position
-            otherAssignment.employee = currentEmployee;
-            if (otherAssignment.position === 'extra/support') {
-              otherAssignment.matchQuality = 'extra';
-            } else {
-              otherAssignment.matchQuality = currentEmployeeScoreAtOther >= 10
-                ? 'best'
-                : currentEmployeeScoreAtOther >= 5
-                  ? 'capable'
-                  : 'fallback';
-            }
-
-            improved = true;
-            break;
-          }
+          improved = true;
+          break;
         }
       }
 
