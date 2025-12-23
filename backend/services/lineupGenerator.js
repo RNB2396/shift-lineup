@@ -663,16 +663,28 @@ function generateLineups(shiftAssignments, employees, dbPositions = null) {
  * Assigns closers to positions based on best match
  */
 function generateClosingLineup(lineups, enrichedAssignments, dbPositions = []) {
-  if (lineups.length === 0) return null;
+  if (lineups.length === 0) {
+    console.log('[Closing] No lineups generated, skipping closing lineup');
+    return null;
+  }
 
   // Get the last lineup of the day
   const lastLineup = lineups[lineups.length - 1];
 
   // Find employees who are closing (working until the end)
   const lastEndTime = lastLineup.endTime;
+
+  console.log('[Closing] Last lineup endTime:', lastEndTime);
+  console.log('[Closing] All employee endTimes:', enrichedAssignments.map(e => ({ name: e.name, endTime: e.endTime })));
+
   const closingEmployees = enrichedAssignments.filter(emp => emp.endTime === lastEndTime);
 
-  if (closingEmployees.length === 0) return null;
+  console.log('[Closing] Employees matching lastEndTime:', closingEmployees.map(e => e.name));
+
+  if (closingEmployees.length === 0) {
+    console.log('[Closing] No employees working until end, skipping closing lineup');
+    return null;
+  }
 
   // Get closing positions from database (positions with requiresClosing = true)
   const closingPositions = dbPositions
@@ -680,8 +692,11 @@ function generateClosingLineup(lineups, enrichedAssignments, dbPositions = []) {
     .sort((a, b) => (a.priority || 99) - (b.priority || 99))
     .map(pos => pos.name);
 
+  console.log('[Closing] Closing positions from DB:', closingPositions);
+
   // If no closing positions defined, return null (no closing lineup)
   if (closingPositions.length === 0) {
+    console.log('[Closing] No closing positions defined in database');
     return null;
   }
 
