@@ -245,9 +245,35 @@ function SavedLineups({ canEdit = true, houseType = 'boh' }) {
     const closingLineupData = allLineupsForDate.find(l => l.shiftPeriod === 'closing');
 
     // Find the last regular lineup's end time (this is when closers work until)
+    // Late night ends at 22:00, which is when closing duties happen (22:00-23:00)
     const lastRegularEndTime = regularLineups.length > 0
       ? regularLineups.reduce((latest, l) => l.endTime > latest ? l.endTime : latest, '00:00')
       : '22:00';
+
+    // Collect employee IDs who should be marked as closers
+    // If there's a closing lineup, use those employees
+    // If not, use employees from the last regular lineup (they're the closers)
+    const closerEmployeeIds = new Set();
+
+    if (closingLineupData && closingLineupData.assignments) {
+      // Use employees from existing closing lineup
+      for (const assignment of closingLineupData.assignments) {
+        if (assignment.employee) {
+          closerEmployeeIds.add(assignment.employee.id);
+        }
+      }
+    } else if (regularLineups.length > 0) {
+      // No closing lineup exists - use employees from the last regular lineup as closers
+      const lastRegularLineup = regularLineups.reduce(
+        (last, l) => l.endTime > last.endTime ? l : last,
+        regularLineups[0]
+      );
+      for (const assignment of lastRegularLineup.assignments) {
+        if (assignment.employee) {
+          closerEmployeeIds.add(assignment.employee.id);
+        }
+      }
+    }
 
     // Build a map of employee shifts from the lineups
     const employeeShifts = new Map();
@@ -258,6 +284,7 @@ function SavedLineups({ canEdit = true, houseType = 'boh' }) {
 
         const empId = assignment.employee.id;
         const existing = employeeShifts.get(empId);
+        const isCloser = closerEmployeeIds.has(empId);
 
         if (!existing) {
           employeeShifts.set(empId, {
@@ -267,7 +294,8 @@ function SavedLineups({ canEdit = true, houseType = 'boh' }) {
             positions: assignment.employee.positions || [],
             bestPositions: assignment.employee.bestPositions || [],
             startTime: lineup.startTime,
-            endTime: lineup.endTime,
+            // If they're a closer, set endTime to lastRegularEndTime so backend includes them in closing
+            endTime: isCloser ? lastRegularEndTime : lineup.endTime,
             isShiftLead: assignment.position.includes('lead'),
             isBooster: assignment.position.includes('booster'),
             isInTraining: assignment.position.includes('training')
@@ -277,7 +305,10 @@ function SavedLineups({ canEdit = true, houseType = 'boh' }) {
           if (lineup.startTime < existing.startTime) {
             existing.startTime = lineup.startTime;
           }
-          if (lineup.endTime > existing.endTime) {
+          // If they're a closer, always use lastRegularEndTime, otherwise extend if needed
+          if (isCloser) {
+            existing.endTime = lastRegularEndTime;
+          } else if (lineup.endTime > existing.endTime) {
             existing.endTime = lineup.endTime;
           }
           // Check for roles
@@ -288,25 +319,7 @@ function SavedLineups({ canEdit = true, houseType = 'boh' }) {
       }
     }
 
-    // Ensure employees in the last lineup have their end time set correctly
-    // so the backend will include them in the closing lineup generation
-    const lastRegularLineup = regularLineups.length > 0
-      ? regularLineups.reduce((last, l) => l.endTime > last.endTime ? l : last, regularLineups[0])
-      : null;
-
-    if (lastRegularLineup) {
-      for (const assignment of lastRegularLineup.assignments) {
-        if (!assignment.employee) continue;
-        const empId = assignment.employee.id;
-        const existing = employeeShifts.get(empId);
-        if (existing) {
-          // Set end time to match the last lineup's end time so they're included in closing
-          existing.endTime = lastRegularEndTime;
-        }
-      }
-    }
-
-    // Also include employees from closing lineup who might not be in regular lineups
+    // Include employees from closing lineup who might not be in regular lineups
     if (closingLineupData && closingLineupData.assignments) {
       for (const assignment of closingLineupData.assignments) {
         if (!assignment.employee) continue;
@@ -314,10 +327,7 @@ function SavedLineups({ canEdit = true, houseType = 'boh' }) {
         const empId = assignment.employee.id;
         const existing = employeeShifts.get(empId);
 
-        if (existing) {
-          // Ensure their end time matches the last lineup end time so they're included in closing
-          existing.endTime = lastRegularEndTime;
-        } else {
+        if (!existing) {
           // Employee only appears in closing lineup (rare case)
           employeeShifts.set(empId, {
             employeeId: empId,
@@ -332,6 +342,7 @@ function SavedLineups({ canEdit = true, houseType = 'boh' }) {
             isInTraining: false
           });
         }
+        // If they exist, their endTime was already set correctly above
       }
     }
 
