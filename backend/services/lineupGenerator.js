@@ -674,10 +674,23 @@ function generateClosingLineup(lineups, enrichedAssignments, dbPositions = []) {
   // Find employees who are closing (working until the end)
   const lastEndTime = lastLineup.endTime;
 
-  console.log('[Closing] Last lineup endTime:', lastEndTime);
-  console.log('[Closing] All employee endTimes:', enrichedAssignments.map(e => ({ name: e.name, endTime: e.endTime })));
+  // Normalize time format for comparison (handle both HH:MM and HH:MM:SS formats)
+  const normalizeTime = (time) => {
+    if (!time) return '';
+    // Convert HH:MM:SS to HH:MM, or keep HH:MM as-is
+    return time.substring(0, 5);
+  };
 
-  const closingEmployees = enrichedAssignments.filter(emp => emp.endTime === lastEndTime);
+  const normalizedLastEndTime = normalizeTime(lastEndTime);
+
+  console.log('[Closing] Last lineup endTime:', lastEndTime, '-> normalized:', normalizedLastEndTime);
+  console.log('[Closing] All employee endTimes:', enrichedAssignments.map(e => ({
+    name: e.name,
+    endTime: e.endTime,
+    normalized: normalizeTime(e.endTime)
+  })));
+
+  const closingEmployees = enrichedAssignments.filter(emp => normalizeTime(emp.endTime) === normalizedLastEndTime);
 
   console.log('[Closing] Employees matching lastEndTime:', closingEmployees.map(e => e.name));
 
