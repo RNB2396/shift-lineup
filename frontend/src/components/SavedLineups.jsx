@@ -239,12 +239,20 @@ function SavedLineups({ canEdit = true, houseType = 'boh' }) {
       console.error('Error loading employees:', err);
     }
 
-    const lineups = savedLineups.filter(l => l.date === selectedDate && l.shiftPeriod !== 'closing');
+    // Get all lineups for this date (including closing for employee extraction)
+    const allLineupsForDate = savedLineups.filter(l => l.date === selectedDate);
+    const regularLineups = allLineupsForDate.filter(l => l.shiftPeriod !== 'closing');
+    const closingLineupData = allLineupsForDate.find(l => l.shiftPeriod === 'closing');
+
+    // Find the last regular lineup's end time (this is when closers work until)
+    const lastRegularEndTime = regularLineups.length > 0
+      ? regularLineups.reduce((latest, l) => l.endTime > latest ? l.endTime : latest, '00:00')
+      : '22:00';
 
     // Build a map of employee shifts from the lineups
     const employeeShifts = new Map();
 
-    for (const lineup of lineups) {
+    for (const lineup of regularLineups) {
       for (const assignment of lineup.assignments) {
         if (!assignment.employee) continue;
 
@@ -276,6 +284,36 @@ function SavedLineups({ canEdit = true, houseType = 'boh' }) {
           if (assignment.position.includes('lead')) existing.isShiftLead = true;
           if (assignment.position.includes('booster')) existing.isBooster = true;
           if (assignment.position.includes('training')) existing.isInTraining = true;
+        }
+      }
+    }
+
+    // Include employees from closing lineup who might not be in regular lineups
+    // and ensure closers have the correct end time (the last regular lineup's end time)
+    if (closingLineupData && closingLineupData.assignments) {
+      for (const assignment of closingLineupData.assignments) {
+        if (!assignment.employee) continue;
+
+        const empId = assignment.employee.id;
+        const existing = employeeShifts.get(empId);
+
+        if (existing) {
+          // Ensure their end time matches the last lineup end time so they're included in closing
+          existing.endTime = lastRegularEndTime;
+        } else {
+          // Employee only appears in closing lineup (rare case)
+          employeeShifts.set(empId, {
+            employeeId: empId,
+            name: assignment.employee.name,
+            isMinor: assignment.employee.isMinor,
+            positions: assignment.employee.positions || [],
+            bestPositions: assignment.employee.bestPositions || [],
+            startTime: lastRegularEndTime, // They came in just for closing
+            endTime: lastRegularEndTime,
+            isShiftLead: false,
+            isBooster: false,
+            isInTraining: false
+          });
         }
       }
     }
